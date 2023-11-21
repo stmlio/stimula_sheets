@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <style>
+    div,
+    button {
+      font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+    }
+
+    label {
+      margin: 2px;
+    }
+
+    ul {
+      padding-left: 16px;
+      white-space: nowrap;
+    }
+
+    li {
+      cursor: pointer;
+    }
+
+    button {
+      background: #fff;
+      border-radius: 28px;
+      color: #1f1f1f;
+      border-color: transparent;
+      margin: 4px;
+      width: 242px;
+      padding: 4px 8px;
+    }
+
+    button:hover {
+      background-color: #ddd;
+    }
+
+    input {
+      margin: 4px 0;
+    }
+
+    .full-width-input {
+      width: 100%;
+    }
+
+    .accordion {}
+
+    .section {
+      border: 1px solid #f1f1f1;
+      border-radius: 20px;
+      background-color: #edf2fa;
+      margin-bottom: 8px;
+    }
+
+    .header {
+      color: #333;
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 20px;
+    }
+
+    .header:hover {
+      background-color: #ddd;
+    }
+
+    .error-header {
+      color: red;
+    }
+
+    .content,
+    .error-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+      padding-left: 8px;
+      /* padding-right: 8px; */
+    }
+
+    .error-content {
+      white-space: pre-line;
+    }
+
+    .scrollable-div {
+      height: 400px;
+      overflow-y: auto;
+    }
+
+    .small-button {
+      width: 115px;
+    }
+
+    td,
+    tr,
+    th {
+      border: 1px solid white;
+      border-collapse: collapse;
+    }
+
+    .scroll {
+      cursor: all-scroll;
+    }
+
+    table {
+      border-collapse: collapse;
+      -webkit-user-select: none;
+      /* Safari */
+      -ms-user-select: none;
+      /* IE 10+ and Edge */
+      user-select: none;
+      /* Standard syntax */
+    }
+
+    .tooltip {
+      /* display: inline-block; */
+      cursor: pointer;
+      position: relative;
+    }
+
+    .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 2px;
+      padding: 2px;
+      position: absolute;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.3s;
+      left: -115px;
+      top: 10px;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="accordion">
+    <div class="section">
+      <div class="header" onclick="toggleSection(1)">Connection</div>
+      <div class="content" id="section1">
+        <form id="connectForm" onsubmit="submitForm(event)">
+          <label for="urlInput">Data Access API URL:</label><br/>
+          <input type="text" id="urlInput" name="url" value="https://daa-git-add-table-count-romkes-projects.vercel.app" class="full-width-input">
+          <br/>
+          <label for="hostInput">Database Host:</label><br/>
+          <input type="text" id="hostInput" name="host" value="database-3.camz002p5mgc.us-east-1.rds.amazonaws.com" class="full-width-input">
+          <br/>
+          <label for="portInput">Database Port:</label><br/>
+          <input type="text" id="portInput" name="port" value="5432" class="full-width-input">
+          <br/>
+          <label for="databaseInput">Database Name:</label><br/>
+          <input type="text" id="databaseInput" name="database" value="testdb10" class="full-width-input">
+          <br/>
+          <label for="userInput">Database User:</label><br/>
+          <input type="text" id="userInput" name="user" value="odoo" class="full-width-input">
+          <br/>
+          <label for="passwordInput">Database Password:</label><br/>
+          <input type="password" id="passwordInput" name="password" value="odoo1234" class="full-width-input">
+          <br/>
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="header" onclick="toggleSection(2)">Tables</div>
+      <div class="content" id="section2">
+        <label for="filterInput">Filter Tables:</label>
+        <input type="text" id="filterInput" placeholder="Filter list"/><br/>
+        <input type="checkbox" id="includeEmpty"/>
+        <label for="includeEmpty">Include Empty</label>
+
+        <!-- Show tables -->
+        <div class="scrollable-div">
+          <ul id="table-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="header" onclick="toggleSection(3)">Headers</div>
+      <div class="content" id="section3">
+        <!-- Show Headers -->
+        <div class="scrollable-div">
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th class="tooltip">P<span class="tooltiptext">Primary Key</span></th>
+                <th class="tooltip">U<span class="tooltiptext">Unique</span></th>
+                <th class="tooltip">F<span class="tooltiptext">Foreign Key</span></th>
+                <th class="tooltip">I<span class="tooltiptext">In Use</span></th>
+                <th class="tooltip">C<span class="tooltiptext">Custom</span></th>
+              </tr>
+            </thead>
+            <tbody id="headers-tbody">
+            </tbody>
+          </table>
+        </div>
+        <button id="refreshHeadersButton" class="small-button" onclick="callRefreshHeaders()">Refresh</button>
+        <button id="applyHeadersButton" class="small-button" onclick="callApplyHeaders()">Apply</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="header" id="header4" onclick="toggleSection(4)">Actions</div>
+      <div class="content" id="section4">
+        <!-- Extract table contents -->
+        <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button><br/>
+        <!-- Load/Post table contents -->
+        <input type="checkbox" id="insertCheckbox" checked><label for="insertCheckbox">Insert</label><br/>
+        <input type="checkbox" id="updateCheckbox" checked><label for="updateCheckbox">Update</label><br/>
+        <input type="checkbox" id="deleteCheckbox" checked><label for="deleteCheckbox">Delete</label><br/>
+        <input type="checkbox" id="executeCheckbox"><label for="executeCheckbox">Execute SQL</label><br/>
+        <input type="checkbox" id="commitCheckbox"><label for="commitCheckbox">Commit SQL</label>
+        <button id="postTableButton" onclick="callPostTable()">Post Table</button>
+        <button id="viewResultButton" class="small-button" onclick="callViewResult()">View Result</button>
+        <button id="hideResultButton" class="small-button" onclick="callHideResult()">Hide Result</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="error-section" class="section" style="display: none">
+    <div id="error-header" class="error-header header" onclick="toggleErrorSection()">Error</div>
+    <div id="error-content" class="error-content">
+      <div id="error-message" class="error-message">
+      </div>
+      <button id="stackTraceButton" onclick="copyStackTrace()" style="display: none;">Copy Stack Trace</button>
+      <div id="error-stacktrace" class="error-stacktrace" style="display: none;">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // accordion scripts
+    function toggleSection(sectionNumber) {
+      // clear error, bec/ it's not relevant for other sections
+      // clearError()
+      const sections = document.getElementsByClassName("content");
+      for (var i = 0; i < sections.length; i++) {
+        // open if it's the right section and it's currently closed, close otherwise
+        const open = (i === sectionNumber - 1) && !sections[i].style.maxHeight
+        sections[i].style.maxHeight = open ? sections[i].scrollHeight + "px" : null
+        if(open) {
+          onSectionOpen(i)
+        }
+      }
+    }
+
+    function toggleErrorSection() {
+      const section = document.getElementById("error-content");
+      // open if it's currently closed, close otherwise
+      const open = !section.style.maxHeight
+      section.style.maxHeight = open ? section.scrollHeight + "px" : null
+    }
+
+    function onSectionOpen(i) {
+      if (i===1) {
+        callUpdateTables()
+      } else if (i===2) {
+        callRefreshHeaders()
+      }
+    }
+
+    // Open the first section on page load
+    toggleSection(1)
+  </script>
+
+  <script>
+    // connect scripts
+    function submitForm(event) {
+      event.preventDefault();
+      localStorage.setItem("access_token", "");
+      const url = document.forms.connectForm.urlInput.value
+      localStorage.setItem("url", url);
+      // google.script.run.withSuccessHandler(onSuccess).withFailureHandler(displayError).doConnect(document.forms.connectForm);
+      runWithLoader('doConnect', onSuccess, document.forms.connectForm)
+    }
+
+    function onSuccess(response) {
+      var token = response['token']
+      localStorage.setItem("access_token", token);
+      toggleSection(2)
+    }
+
+  </script>
+
+  <!-- Tables scripts -->
+  <script>
+    // get tables scripts
+    const filterInputElement = document.getElementById('filterInput');
+    const includeEmptyElement = document.getElementById('includeEmpty');
+    let tableList = []
+
+    function callUpdateTables() {
+      var url = localStorage.getItem("url");
+      var token = localStorage.getItem("access_token");
+      var filter = filterInputElement.value;
+
+      // google.script.run.withFailureHandler(displayError).withSuccessHandler(storeTables).getTables(url, token, filter);
+      runWithLoader('getTables', storeTables, url, token, filter)
+    }
+
+    function storeTables(tables) {
+      tableList = tables
+      filterList()
+    }
+
+
+    // Attach an input event listener to the filter input and checkbox
+    filterInputElement.addEventListener('input', filterList);
+    includeEmptyElement.addEventListener('input', filterList);
+
+    function filterList() {
+      // Get the filter and checkbox values
+      const filterValue = filterInputElement.value.toLowerCase();
+      const includeEmptyValue = includeEmptyElement.checked;
+
+
+      // Filter the list items based on the input value and checkbox
+      const filteredItems = tableList.filter(item => {
+          return item.name.includes(filterValue) && (includeEmptyValue || item.count > 0);
+      });
+
+      // Update the displayed list
+      displayTables(filteredItems);
+    }
+
+    // Function to update the list in the sidebar
+    function displayTables(result) {
+      var ul = document.getElementById('table-list');
+      ul.innerHTML = ''; // Clear the list
+
+      // Loop through the result and add items to the list
+      result.forEach(function(item){
+        var li = document.createElement('li');
+        li.textContent = `${item.name} (${item.count})`;
+        li.addEventListener('click', function() {
+          clickTableName(item.name);
+        });
+        ul.appendChild(li);
+      })
+    }
+
+    function clickTableName(item) {
+      // Open or activate a tab for the selected table
+      // google.script.run.withSuccessHandler(openTabSuccess).withFailureHandler(displayError).openTab(item);
+      runWithLoader('openTab', openTabSuccess, item)
+    }
+
+    function openTabSuccess() {
+      toggleSection(3)
+    }
+
+  </script>
+
+  <!-- Headers scripts -->
+  <script>
+    function fillHeadersTable(headersAsJson) {
+      // Get the table body
+      var tbody = document.getElementById('headers-tbody');
+      tbody.innerHTML = ''
+
+      // Loop through the JSON data and create rows
+      headersAsJson.columns.forEach(function (row) {
+          var tr = document.createElement('tr');
+          tr.draggable = 'true'
+          tr.ondragstart = dragstart
+          tr.ondragover = dragover
+
+          var td = document.createElement('td');
+          td.textContent = '=';
+          td.classList.add('scroll')
+          tr.appendChild(td);
+
+          tr.appendChild(createCheckbox(row['default'], false));
+
+          var td = document.createElement('td');
+          td.textContent = row.key;
+          tr.appendChild(td);
+
+          tr.appendChild(createCheckbox(row['primary-key'], true));
+          tr.appendChild(createCheckbox(row['unique'], true));
+          tr.appendChild(createCheckbox(row['foreign-key'], true));
+          tr.appendChild(createCheckbox(row['in-use'], true));
+          tr.appendChild(createCheckbox(row['custom'], true));
+
+          // Append the row to the table body
+          tbody.appendChild(tr);
+      });
+    }
+
+    function createCheckbox(checked, disabled) {
+      var td = document.createElement('td');
+      var input = document.createElement('input')
+      input.type = 'checkbox'
+      if (disabled)
+        input.disabled = 'true'
+      if (checked)
+        input.checked = 'checked'
+      td.appendChild(input);
+      return td
+    }
+
+    function callRefreshHeaders() {
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      // google.script.run.withFailureHandler(displayError).getDefaultHeader(url, token);
+      runWithLoader('getHeaders', fillHeadersTable, url, token)
+    }
+
+    function callApplyHeaders() {
+      headers = []
+      // get table body
+      var tbody = document.getElementById('headers-tbody');
+      for (var row of tbody.rows) {
+        const key = row.cells[2].textContent
+        const enabled = row.cells[1].children[0].checked
+        headers.push({key, enabled})
+
+      }
+      runWithLoader('applyHeaders', applyHeadersSuccess, headers)
+    }
+
+    function applyHeadersSuccess() {
+      toggleSection(4)
+    }
+
+    var row;
+
+    function dragstart() {
+        row = event.target;
+    }
+
+    function dragover() {
+        var e = event;
+        e.preventDefault();
+
+        let children = Array.from(e.target.parentNode.parentNode.children);
+        if (children.indexOf(e.target.parentNode) > children.indexOf(row))
+            e.target.parentNode.after(row);
+        else
+            e.target.parentNode.before(row);
+    }
+  </script>
+
+  <!-- Actions scripts -->
+  <script>
+    const buttonDefaultHeader = document.getElementById('getDefaultHeaderButton');
+    const buttonExtract = document.getElementById('extractTableButton');
+    const buttonPost = document.getElementById('postTableButton');
+
+    function callGetDefaultHeader() {
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      // google.script.run.withFailureHandler(displayError).getDefaultHeader(url, token);
+      runWithLoader('getDefaultHeader', null, url, token)
+    }
+
+    function callExtractTable() {
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      // google.script.run.withFailureHandler(displayError).getTable(url, token);
+      runWithLoader('getTable', null, url, token)
+    }
+
+    function callPostTable() {
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      const isInsert = document.getElementById('insertCheckbox').checked;
+      const isUpdate = document.getElementById('updateCheckbox').checked;
+      const isDelete = document.getElementById('deleteCheckbox').checked;
+      const isExecute = document.getElementById('executeCheckbox').checked;
+      const isCommit = document.getElementById('commitCheckbox').checked;
+      runWithLoader('postTable', null, url, token, isInsert, isUpdate, isDelete, isExecute, isCommit)
+    }
+
+    function callViewResult() {
+      runWithLoader('viewResult')
+    }
+
+    function callHideResult() {
+      runWithLoader('hideResult')
+    }
+
+    function runWithLoader(funcToCall, callback) {
+      // Show loading cursor
+      showLoadingSpinner()
+
+      // clear error
+      clearError()
+
+      // Get the additional arguments starting from the second one
+      var additionalArgs = Array.prototype.slice.call(arguments, 2);
+
+      // Call the specified function using google.script.run
+      google.script.run.withSuccessHandler(function(result) {
+          // Reset cursor to default
+          hideLoadingSpinner()
+          // Invoke the callback function (if provided) with the result
+          if (callback) {
+              callback(result);
+          }
+      }).withFailureHandler(function(error) {
+        // Reset cursor to default
+        hideLoadingSpinner()
+
+        // display error
+        displayError(error)
+      })[funcToCall].apply(null, additionalArgs)
+    }
+    
+    function showLoadingSpinner() {
+        // Set the cursor style for specific elements, e.g., buttons and labels
+        document.querySelectorAll('div, button, label, li').forEach(function(element) {
+            element.style.cursor = 'wait';
+        });
+    }
+
+    function hideLoadingSpinner() {
+        // Reset the cursor style for specific elements
+        document.querySelectorAll('div, button, label, li').forEach(function(element) {
+            element.style.cursor = 'default';
+        });
+    }
+  </script>
+
+  <script>
+    function clearError() {
+      const errorSection = document.getElementById('error-section' )
+      // hide
+      errorSection.style.display = "none";
+      // close
+      const content = document.getElementById("error-content");
+      content.style.maxHeight = null
+      // clear
+      document.getElementById('error-header' ).innerHTML = ''
+      document.getElementById('error-message' ).innerHTML = ''
+      document.getElementById('error-stacktrace' ).innerHTML = ''
+      // hide copy stack trace button
+      const button = document.getElementById("stackTraceButton");
+      stackTraceButton.style.display = "none";
+
+    }
+
+    function displayError(e) {
+
+      // display error
+      const errorSection = document.getElementById('error-section' )
+      errorSection.style.display = "block";
+      const MAX_LENGTH = 40
+      try {
+        // for API errors
+        const error = JSON.parse(e.message)
+        document.getElementById('error-header' ).innerHTML = shortenString(error.short, MAX_LENGTH)
+        document.getElementById('error-message' ).innerHTML = error.message
+        document.getElementById('error-stacktrace' ).innerHTML = error.trace
+        const button = document.getElementById("stackTraceButton");
+        stackTraceButton.style.display = "block";
+      } catch (err) {
+        // for other errors
+        document.getElementById('error-header' ).innerHTML = shortenString(e.message, MAX_LENGTH)
+        document.getElementById('error-message' ).innerHTML = e.message
+        document.getElementById('error-stacktrace' ).innerHTML = ''
+      }
+    }
+
+    function shortenString(inputString, maxLength) {
+      if (inputString.length <= maxLength) {
+        return inputString;
+      } else {
+        return inputString.substring(0, maxLength - 3) + '...';
+      }
+    }
+
+    function copyStackTrace() {
+      var traceContent = document.getElementById('error-stacktrace').textContent;
+
+      // Use the Clipboard API to copy the content to the clipboard
+      navigator.clipboard.writeText(traceContent).then(function() {
+        console.log('Stack trace copied');
+      }).catch(function(err) {
+        console.error('Unable to copy stack trace to clipboard:', err);
+      });
+    }
+
+  </script>
+
+
+
+</body>
+
+</html>

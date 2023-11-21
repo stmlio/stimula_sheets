@@ -1,0 +1,270 @@
+function onOpen() {
+  SpreadsheetApp
+    .getUi()
+    .createMenu("Data Access")
+    .addItem("Instant Data Access", "openSidebar")
+    .addToUi();
+}
+
+function openSidebar() {
+  const version = 'V2'
+  var htmlOutput = HtmlService.createHtmlOutputFromFile('sidebar')
+    .setTitle('Instant Data Access (' + version + ')')
+    .setWidth(100);
+  SpreadsheetApp.getUi().showSidebar(htmlOutput);
+}
+
+function doConnect(params) {
+  const url = params.url + '/auth'
+  const options = {
+    "method": "post",
+    "payload":
+      'host=' + encodeURIComponent(params['host']) +
+      '&port=' + encodeURIComponent(params['port']) +
+      '&user=' + encodeURIComponent(params['user']) +
+      '&password=' + encodeURIComponent(params['password']) +
+      '&database=' + encodeURIComponent(params['database'])
+  }
+  const response = makeHttpRequest(url, options)
+  return JSON.parse(response);
+}
+
+function getTables(url, token, filter) {
+  var options = {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  };
+  var response = makeHttpRequest(url + '/tables' + '?q=' + encodeURIComponent(filter), options);
+  var data = JSON.parse(response);
+  return data;
+}
+
+function openTab(name) {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+  var sheet = spreadsheet.getSheetByName(name);
+  if (!sheet) {
+    // Create a new sheet if it doesn't exist
+    sheet = spreadsheet.insertSheet(name);
+  }
+  // activate sheet
+  spreadsheet.setActiveSheet(sheet);
+}
+
+function getDefaultHeader(url, token) {
+  // get table name from active sheet
+  const tableName = getActiveTableName_(url, token)
+  const options = {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  };
+  const header = makeHttpRequest(url + '/tables/' + tableName + '/header?style=csv', options)
+  displaySheet(tableName, header)
+}
+
+function getHeaders(url, token) {
+  // get table name from active sheet
+  const tableName = getActiveTableName_(url, token)
+  const options = {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  };
+  const headers = makeHttpRequest(url + '/tables/' + tableName + '/header', options)
+  Logger.log(headers)
+  return JSON.parse(headers)
+}
+
+function applyHeaders(headers) {
+  var data = [];
+  for (var header of headers) {
+    if (header['enabled']) {
+      data.push(header['key']);
+    }
+  }
+  Logger.log(data)
+  // get active sheet
+  const sheet = SpreadsheetApp.getActiveSheet()
+  // clear first row
+  if (sheet.getLastColumn() > 0)
+    sheet.getRange(1, 1, 1, sheet.getLastColumn()).clearContent();
+  Logger.log(data.length)
+  // set headers
+  sheet.getRange(1, 1, 1, data.length).setValues([data]);
+}
+
+function getTable(url, token) {
+  // get table name from active sheet
+  const tableName = getActiveTableName_(url, token)
+  const header = getCurrentHeader(tableName)
+  const options = {
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+    muteHttpExceptions: true
+  };
+
+  response = makeHttpRequest(url + '/tables/' + tableName + (header ? '?h=' + header : ''), options)
+  displaySheet(tableName, response)
+}
+
+function displaySheet(name, content) {
+  const data = Utilities.parseCsv(content);
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+  var sheet = spreadsheet.getSheetByName(name);
+  if (sheet) {
+    // activate existing
+    spreadsheet.setActiveSheet(sheet);
+  } else {
+    // insert and activate new sheet
+    sheet = spreadsheet.insertSheet(name);
+  }
+  sheet.clear(); // Clear existing data (optional)
+  sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+}
+
+function getCurrentHeader() {
+  // Access the sheet by name
+  var sheet = SpreadsheetApp.getActiveSheet();
+  if (!sheet) {
+    // sheet doesn't exist yet, return empty header
+    return ''
+  }
+
+  // Get the data from the first row (assuming headers are in the first row)
+  var firstRowData = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  return firstRowData
+}
+
+function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCommit) {
+  // get table name from active sheet
+  const tableName = getActiveTableName_(baseUrl, token)
+  const header = getCurrentHeader(tableName)
+  const url = baseUrl + '/tables/' + tableName + '?style=sql&skiprows=1'
+    + (isInsert ? '&insert=true' : '') 
+    + (isUpdate ? '&update=true' : '') 
+    + (isDelete ? '&delete=true' : '') 
+    + (isExecute ? '&execute=true' : '') 
+    + (isCommit ? '&commit=true' : '') 
+    + (header ? '&h=' + header : '')
+  const csv = getActiveSheetAsCsv()
+  const options = {
+    "method": "post",
+    "contentType": "text/csv",
+    "payload": csv,
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  };
+
+  response = makeHttpRequest(url, options)
+
+  // store last posted table name so we can move back to this sheet after hiding the result sheet
+  PropertiesService.getUserProperties().setProperty('last-posted-table-name', tableName)
+
+  // show result sheet
+  displaySheet('result', response)
+}
+
+function getActiveSheetAsCsv() {
+  const sheet = SpreadsheetApp.getActiveSheet();
+  const dataRange = sheet.getDataRange().getValues();
+
+  var csv = '';
+
+  // Loop through the rows in the data range
+  for (var i = 0; i < dataRange.length; i++) {
+    var row = dataRange[i];
+
+    // Loop through the cells in each row
+    for (var j = 0; j < row.length; j++) {
+      var cell = row[j];
+
+      // Enclose cell value in double quotes if it contains a comma, newline, or double quote
+      if (cell.toString().match(/["\n,]/)) {
+        cell = '"' + cell.replace(/"/g, '""') + '"';
+      }
+
+      // Append the cell value to the CSV string
+      csv += cell;
+
+      // Add a comma to separate cells (except for the last cell in a row)
+      if (j < row.length - 1) {
+        csv += ',';
+      }
+    }
+
+    // Add a newline character to separate rows (except for the last row)
+    if (i < dataRange.length - 1) {
+      csv += '\n';
+    }
+  }
+  return csv
+}
+
+function viewResult() {
+  openTab("result")
+}
+
+function hideResult() {
+  // delete the result sheet 
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+  const resultSheet = spreadsheet.getSheetByName('result')
+  if (resultSheet) {
+    // first active the last posted sheet
+    const previousSheetName = PropertiesService.getUserProperties().getProperty('last-posted-table-name')
+    if (previousSheetName) {
+      const previousSheet = spreadsheet.getSheetByName(previousSheetName)
+      if (previousSheet) {
+        SpreadsheetApp.setActiveSheet(previousSheet);
+      }
+    }
+    // the hide the result sheet (for some reason it flashes the result-1 sheet first)
+    resultSheet.hideSheet()
+  }
+}
+
+function getActiveTableName_(url, token) {
+  // get active sheet's name
+  name = SpreadsheetApp.getActiveSheet().getName()
+
+  // check if it's a table
+  filter = '^' + name + '$'
+  tables = getTables(url, token, filter)
+
+  if (tables.length == 0) {
+    throw "Sheet '" + name + "' does not match any table."
+  }
+
+  return name
+}
+
+function makeHttpRequest(url, options) {
+  options.muteHttpExceptions = true
+
+  // Make the HTTP request
+  var response = UrlFetchApp.fetch(url, options);
+
+  // Check the HTTP response code
+  var statusCode = response.getResponseCode();
+
+  // Check if the response code indicates an error (e.g., 4xx or 5xx)
+  if (statusCode >= 400) {
+    // Get the response body
+    var responseBody = response.getContentText();
+
+    // Throw an exception with the response body as the error message
+    throw responseBody;
+  }
+
+  // If the response code is not an error, return the response
+  return response;
+}
+
+
