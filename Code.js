@@ -14,8 +14,7 @@ function openSidebar() {
   SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
 
-function doConnect(params) {
-  const url = params.url + '/auth'
+function doStandaloneConnect(url, params) {
   const options = {
     "method": "post",
     "payload":
@@ -25,7 +24,18 @@ function doConnect(params) {
       '&password=' + encodeURIComponent(params['password']) +
       '&database=' + encodeURIComponent(params['database'])
   }
-  const response = makeHttpRequest(url, options)
+  const response = makeHttpRequest(url + '/auth', options)
+  return JSON.parse(response);
+}
+function doOdooConnect(url, database, user, password) {
+  const options = {
+    "method": "post",
+    "payload":
+      'database=' + encodeURIComponent(database) +
+      '&username=' + encodeURIComponent(user) +
+      '&password=' + encodeURIComponent(password)
+  }
+  const response = makeHttpRequest(url + '/auth', options)
   return JSON.parse(response);
 }
 
@@ -246,6 +256,10 @@ function getActiveTableName_(url, token) {
 }
 
 function makeHttpRequest(url, options) {
+    // Log the URL
+  Logger.log(url)
+
+    // Set the muteHttpExceptions option to true to prevent HTTP 4xx and 5xx errors from being treated as exceptions.
   options.muteHttpExceptions = true
 
   // Make the HTTP request

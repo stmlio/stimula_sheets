@@ -42,7 +42,8 @@
     }
 
     .full-width-input {
-      width: 100%;
+      box-sizing: border-box;
+      width: calc(100% - 5px);
     }
 
     .accordion {}
@@ -138,36 +139,115 @@
       visibility: visible;
       opacity: 1;
     }
+
+    .tabs-container {
+      display: flex;
+      margin-right: 5px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 5px;
+      cursor: pointer;
+      background-color: #bbb;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      /*margin-right: -1px;*/
+      position: relative;
+    }
+
+    .tab.active {
+      background-color: #edf2fa; /* Set the active tab color */
+      /*color: #fff;*/
+      z-index: 1;
+    }
+
+    .tabs-content {
+      /*margin: 20px;*/
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
   </style>
 </head>
 
 <body>
+<script>
+  function showTab(tabId) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => content.classList.remove('active'));
 
+    // Show the selected tab content
+    const selectedTab = document.getElementById(tabId);
+    selectedTab.classList.add('active');
+
+    // Update active tab indicator
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    const section1 = document.getElementById("section1");
+
+    section1.style.maxHeight = section1.scrollHeight + "px";
+
+  }
+</script>
   <div class="accordion">
     <div class="section">
       <div class="header" onclick="toggleSection(1)">Connection</div>
       <div class="content" id="section1">
-        <form id="connectForm" onsubmit="submitForm(event)">
-          <label for="urlInput">Data Access API URL:</label><br/>
-          <input type="text" id="urlInput" name="url" value="https://daa-git-add-table-count-romkes-projects.vercel.app" class="full-width-input">
-          <br/>
-          <label for="hostInput">Database Host:</label><br/>
-          <input type="text" id="hostInput" name="host" value="database-3.camz002p5mgc.us-east-1.rds.amazonaws.com" class="full-width-input">
-          <br/>
-          <label for="portInput">Database Port:</label><br/>
-          <input type="text" id="portInput" name="port" value="5432" class="full-width-input">
-          <br/>
-          <label for="databaseInput">Database Name:</label><br/>
-          <input type="text" id="databaseInput" name="database" value="testdb10" class="full-width-input">
-          <br/>
-          <label for="userInput">Database User:</label><br/>
-          <input type="text" id="userInput" name="user" value="odoo" class="full-width-input">
-          <br/>
-          <label for="passwordInput">Database Password:</label><br/>
-          <input type="password" id="passwordInput" name="password" value="odoo1234" class="full-width-input">
-          <br/>
-          <button type="submit">Submit</button>
-        </form>
+        <div class="tabs-container">
+          <div class="tab active" onclick="showTab('tab1')">odoo.sh</div>
+          <div class="tab" onclick="showTab('tab2')">standalone</div>
+        </div>
+        <div class="tabs-content">
+          <div id="tab1" class="tab-content active">
+            <form id="odooConnectForm" onsubmit="submitOdooConnectForm(event)">
+              <label for="databaseInput">Database Name:</label><br/>
+              <input type="text" id="odooDatabaseInput" name="database" value="" class="full-width-input">
+              <br/>
+              <label for="userInput">Odoo User:</label><br/>
+              <input type="text" id="odooUserInput" name="user" value="admin" class="full-width-input">
+              <br/>
+              <label for="passwordInput">Odoo Password:</label><br/>
+              <input type="password" id="odooPasswordInput" name="password" value="admin" class="full-width-input">
+              <br/>
+              <button type="submit">Connect</button>
+            </form>
+          </div>
+
+          <div id="tab2" class="tab-content">
+              <form id="standaloneConnectForm" onsubmit="submitStandaloneConnectForm(event)">
+                  <label for="urlInput">Data Access API URL:</label><br/>
+                  <input type="text" id="urlInput" name="url" value="https://daa-git-add-table-count-romkes-projects.vercel.app" class="full-width-input">
+                  <br/>
+                  <label for="hostInput">Database Host:</label><br/>
+                  <input type="text" id="hostInput" name="host" value="database-3.camz002p5mgc.us-east-1.rds.amazonaws.com" class="full-width-input">
+                  <br/>
+                  <label for="portInput">Database Port:</label><br/>
+                  <input type="text" id="portInput" name="port" value="5432" class="full-width-input">
+                  <br/>
+                  <label for="databaseInput">Database Name:</label><br/>
+                  <input type="text" id="databaseInput" name="database" value="testdb10" class="full-width-input">
+                  <br/>
+                  <label for="userInput">Database User:</label><br/>
+                  <input type="text" id="userInput" name="user" value="odoo" class="full-width-input">
+                  <br/>
+                  <label for="passwordInput">Database Password:</label><br/>
+                  <input type="password" id="passwordInput" name="password" value="odoo1234" class="full-width-input">
+                  <br/>
+                  <button type="submit">Connect</button>
+              </form>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -245,8 +325,6 @@
   <script>
     // accordion scripts
     function toggleSection(sectionNumber) {
-      // clear error, bec/ it's not relevant for other sections
-      // clearError()
       const sections = document.getElementsByClassName("content");
       for (var i = 0; i < sections.length; i++) {
         // open if it's the right section and it's currently closed, close otherwise
@@ -279,13 +357,24 @@
 
   <script>
     // connect scripts
-    function submitForm(event) {
+    function submitOdooConnectForm(event) {
       event.preventDefault();
       localStorage.setItem("access_token", "");
-      const url = document.forms.connectForm.urlInput.value
+      const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+      const user = document.forms.odooConnectForm.odooUserInput.value;
+      const password = document.forms.odooConnectForm.odooPasswordInput.value;
+      const url = 'https://' + db + '.dev.odoo.com/data_access/1.0'
       localStorage.setItem("url", url);
-      // google.script.run.withSuccessHandler(onSuccess).withFailureHandler(displayError).doConnect(document.forms.connectForm);
-      runWithLoader('doConnect', onSuccess, document.forms.connectForm)
+      console.log(url)
+      runWithLoader('doOdooConnect', onSuccess, url, db, user, password)
+    }
+
+    function submitStandaloneConnectForm(event) {
+      event.preventDefault();
+      localStorage.setItem("access_token", "");
+      const url = document.forms.standaloneConnectForm.urlInput.value
+      localStorage.setItem("url", url);
+      runWithLoader('doStandaloneConnect', onSuccess, url, document.forms.standaloneConnectForm)
     }
 
     function onSuccess(response) {
@@ -308,7 +397,6 @@
       var token = localStorage.getItem("access_token");
       var filter = filterInputElement.value;
 
-      // google.script.run.withFailureHandler(displayError).withSuccessHandler(storeTables).getTables(url, token, filter);
       runWithLoader('getTables', storeTables, url, token, filter)
     }
 
@@ -355,7 +443,6 @@
 
     function clickTableName(item) {
       // Open or activate a tab for the selected table
-      // google.script.run.withSuccessHandler(openTabSuccess).withFailureHandler(displayError).openTab(item);
       runWithLoader('openTab', openTabSuccess, item)
     }
 
@@ -416,7 +503,6 @@
     function callRefreshHeaders() {
       const url = localStorage.getItem("url");
       const token = localStorage.getItem("access_token");
-      // google.script.run.withFailureHandler(displayError).getDefaultHeader(url, token);
       runWithLoader('getHeaders', fillHeadersTable, url, token)
     }
 
@@ -464,14 +550,12 @@
     function callGetDefaultHeader() {
       const url = localStorage.getItem("url");
       const token = localStorage.getItem("access_token");
-      // google.script.run.withFailureHandler(displayError).getDefaultHeader(url, token);
       runWithLoader('getDefaultHeader', null, url, token)
     }
 
     function callExtractTable() {
       const url = localStorage.getItem("url");
       const token = localStorage.getItem("access_token");
-      // google.script.run.withFailureHandler(displayError).getTable(url, token);
       runWithLoader('getTable', null, url, token)
     }
 
@@ -504,23 +588,32 @@
       // Get the additional arguments starting from the second one
       var additionalArgs = Array.prototype.slice.call(arguments, 2);
 
-      // Call the specified function using google.script.run
-      google.script.run.withSuccessHandler(function(result) {
-          // Reset cursor to default
-          hideLoadingSpinner()
-          // Invoke the callback function (if provided) with the result
-          if (callback) {
-              callback(result);
-          }
-      }).withFailureHandler(function(error) {
-        // Reset cursor to default
-        hideLoadingSpinner()
+      // check if we're running in a local browser
+        if (typeof google !== 'undefined') {
+            // Call the specified function using google.script.run
+            google.script.run.withSuccessHandler(function (result) {
+                // Reset cursor to default
+                hideLoadingSpinner()
+                // Invoke the callback function (if provided) with the result
+                if (callback) {
+                    callback(result);
+                }
+            }).withFailureHandler(function (error) {
+                // Reset cursor to default
+                hideLoadingSpinner()
 
-        // display error
-        displayError(error)
-      })[funcToCall].apply(null, additionalArgs)
+                // display error
+                displayError(error)
+            })[funcToCall].apply(null, additionalArgs)
+        } else {
+            // Reset cursor to default
+            hideLoadingSpinner()
+
+            // display error
+            displayError({message: 'Google environment not loaded'})
+        }
     }
-    
+
     function showLoadingSpinner() {
         // Set the cursor style for specific elements, e.g., buttons and labels
         document.querySelectorAll('div, button, label, li').forEach(function(element) {
@@ -562,9 +655,10 @@
       const MAX_LENGTH = 40
       try {
         // for API errors
-        const error = JSON.parse(e.message)
-        document.getElementById('error-header' ).innerHTML = shortenString(error.short, MAX_LENGTH)
-        document.getElementById('error-message' ).innerHTML = error.message
+        const error = JSON.parse(e.message);
+        const shortMessage = shortenString(error.type + ': ' + error.short, MAX_LENGTH)
+        document.getElementById('error-header' ).innerHTML = shortMessage
+        document.getElementById('error-message' ).innerHTML = error.msg
         document.getElementById('error-stacktrace' ).innerHTML = error.trace
         const button = document.getElementById("stackTraceButton");
         stackTraceButton.style.display = "block";
