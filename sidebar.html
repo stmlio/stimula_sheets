@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en_US">
 
 <head>
   <base target="_top">
+  <title>Data Access</title>
   <style>
     div,
     button {
@@ -99,6 +100,8 @@
       border-collapse: collapse;
     }
 
+    /* Selector is used dynamically when creating header section */
+    /* noinspection CssUnusedSymbol */
     .scroll {
       cursor: all-scroll;
     }
@@ -211,13 +214,13 @@
         <div class="tabs-content">
           <div id="tab1" class="tab-content active">
             <form id="odooConnectForm" onsubmit="submitOdooConnectForm(event)">
-              <label for="databaseInput">Database Name:</label><br/>
+              <label for="odooDatabaseInput">Database Name:</label><br/>
               <input type="text" id="odooDatabaseInput" name="database" value="" class="full-width-input">
               <br/>
-              <label for="userInput">Odoo User:</label><br/>
+              <label for="odooUserInput">Odoo User:</label><br/>
               <input type="text" id="odooUserInput" name="user" value="admin" class="full-width-input">
               <br/>
-              <label for="passwordInput">Odoo Password:</label><br/>
+              <label for="odooPasswordInput">Odoo Password:</label><br/>
               <input type="password" id="odooPasswordInput" name="password" value="admin" class="full-width-input">
               <br/>
               <button type="submit">Connect</button>
@@ -393,9 +396,9 @@
     let tableList = []
 
     function callUpdateTables() {
-      var url = localStorage.getItem("url");
-      var token = localStorage.getItem("access_token");
-      var filter = filterInputElement.value;
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      const filter = '.*'
 
       runWithLoader('getTables', storeTables, url, token, filter)
     }
@@ -473,7 +476,7 @@
 
           tr.appendChild(createCheckbox(row['default'], false));
 
-          var td = document.createElement('td');
+          td = document.createElement('td');
           td.textContent = row.key;
           tr.appendChild(td);
 
@@ -642,7 +645,7 @@
       document.getElementById('error-message' ).innerHTML = ''
       document.getElementById('error-stacktrace' ).innerHTML = ''
       // hide copy stack trace button
-      const button = document.getElementById("stackTraceButton");
+      const stackTraceButton = document.getElementById("stackTraceButton");
       stackTraceButton.style.display = "none";
 
     }
@@ -656,11 +659,10 @@
       try {
         // for API errors
         const error = JSON.parse(e.message);
-        const shortMessage = shortenString(error.type + ': ' + error.short, MAX_LENGTH)
-        document.getElementById('error-header' ).innerHTML = shortMessage
+        document.getElementById('error-header' ).innerHTML = shortenString(error.type + ': ' + error.short, MAX_LENGTH)
         document.getElementById('error-message' ).innerHTML = error.msg
         document.getElementById('error-stacktrace' ).innerHTML = error.trace
-        const button = document.getElementById("stackTraceButton");
+        const stackTraceButton = document.getElementById("stackTraceButton");
         stackTraceButton.style.display = "block";
       } catch (err) {
         // for other errors
