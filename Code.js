@@ -40,13 +40,7 @@ function doOdooConnect(url, database, user, password) {
 }
 
 function getTables(url, token, filter) {
-  var options = {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + token,
-    },
-  };
-  var response = makeHttpRequest(url + '/tables' + '?q=' + encodeURIComponent(filter), options);
+  var response = makeHttpRequest(url + '/tables' + '?q=' + encodeURIComponent(filter), {}, token);
   var data = JSON.parse(response);
   return data;
 }
@@ -65,26 +59,14 @@ function openTab(name) {
 function getDefaultHeader(url, token) {
   // get table name from active sheet
   const tableName = getActiveTableName_(url, token)
-  const options = {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + token,
-    },
-  };
-  const header = makeHttpRequest(url + '/tables/' + tableName + '/header?style=csv', options)
+  const header = makeHttpRequest(url + '/tables/' + tableName + '/header?style=csv', {}, token)
   displaySheet(tableName, header)
 }
 
 function getHeaders(url, token) {
   // get table name from active sheet
   const tableName = getActiveTableName_(url, token)
-  const options = {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + token,
-    },
-  };
-  const headers = makeHttpRequest(url + '/tables/' + tableName + '/header', options)
+  const headers = makeHttpRequest(url + '/tables/' + tableName + '/header', {}, token)
   Logger.log(headers)
   return JSON.parse(headers)
 }
@@ -110,16 +92,11 @@ function applyHeaders(headers) {
 function getTable(url, token) {
   // get table name from active sheet
   const tableName = getActiveTableName_(url, token)
-  const header = getCurrentHeader(tableName)
-  const options = {
-    method: "GET",
-    headers: {
-      Authorization: "Bearer " + token,
-    },
-    muteHttpExceptions: true
-  };
 
-  response = makeHttpRequest(url + '/tables/' + tableName + (header ? '?h=' + header : ''), options)
+  // get header from first row
+  const header = getCurrentHeader(tableName)
+
+  response = makeHttpRequest(url + '/tables/' + tableName + (header ? '?h=' + header : ''), {}, token)
   displaySheet(tableName, response)
 }
 
@@ -168,12 +145,9 @@ function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCo
     "method": "post",
     "contentType": "text/csv",
     "payload": csv,
-    headers: {
-      Authorization: "Bearer " + token,
-    },
   };
 
-  response = makeHttpRequest(url, options)
+  response = makeHttpRequest(url, options, token)
 
   // store last posted table name so we can move back to this sheet after hiding the result sheet
   PropertiesService.getUserProperties().setProperty('last-posted-table-name', tableName)
@@ -255,12 +229,22 @@ function getActiveTableName_(url, token) {
   return name
 }
 
-function makeHttpRequest(url, options) {
-    // Log the URL
-  Logger.log(url)
+function makeHttpRequest(url, options, token = null) {
+    // Log the method, URL and optional payload
+  Logger.log(options.method + ' ' + url)
+  if (options.payload) {
+    Logger.log(options.payload)
+  }
 
-    // Set the muteHttpExceptions option to true to prevent HTTP 4xx and 5xx errors from being treated as exceptions.
+  // Set default options
+  options.method = options.method || 'GET'
+  // Set the muteHttpExceptions option to true to prevent HTTP 4xx and 5xx errors from being treated as exceptions.
   options.muteHttpExceptions = true
+  if (token) {
+    options.headers = {
+      Authorization: "Bearer " + token,
+    }
+  }
 
   // Make the HTTP request
   var response = UrlFetchApp.fetch(url, options);
