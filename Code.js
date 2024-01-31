@@ -24,7 +24,7 @@ function doStandaloneConnect(url, params) {
       '&password=' + encodeURIComponent(params['password']) +
       '&database=' + encodeURIComponent(params['database'])
   }
-  const response = makeHttpRequest(url + '/auth', options)
+  const response = _makeHttpRequest(url + '/auth', options)
   return JSON.parse(response);
 }
 function doOdooConnect(url, database, user, password) {
@@ -35,38 +35,31 @@ function doOdooConnect(url, database, user, password) {
       '&username=' + encodeURIComponent(user) +
       '&password=' + encodeURIComponent(password)
   }
-  const response = makeHttpRequest(url + '/auth', options)
+  const response = _makeHttpRequest(url + '/auth', options)
   return JSON.parse(response);
 }
 
 function getTables(url, token, filter) {
-  var response = makeHttpRequest(url + '/tables' + '?q=' + encodeURIComponent(filter), {}, token);
+  var response = _makeHttpRequest(url + '/tables' + '?q=' + encodeURIComponent(filter), {}, token);
   var data = JSON.parse(response);
   return data;
 }
 
 function openTab(name) {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
-  var sheet = spreadsheet.getSheetByName(name);
-  if (!sheet) {
-    // Create a new sheet if it doesn't exist
-    sheet = spreadsheet.insertSheet(name);
-  }
-  // activate sheet
-  spreadsheet.setActiveSheet(sheet);
+  _activateSheet(name)
 }
 
 function getDefaultHeader(url, token) {
   // get table name from active sheet
-  const tableName = getActiveTableName_(url, token)
-  const header = makeHttpRequest(url + '/tables/' + tableName + '/header?style=csv', {}, token)
-  displaySheet(tableName, header)
+  const tableName = _getActiveTableName(url, token)
+  const header = _makeHttpRequest(url + '/tables/' + tableName + '/header?style=csv', {}, token)
+  _displaySheet(tableName, header)
 }
 
 function getHeaders(url, token) {
   // get table name from active sheet
-  const tableName = getActiveTableName_(url, token)
-  const headers = makeHttpRequest(url + '/tables/' + tableName + '/header', {}, token)
+  const tableName = _getActiveTableName(url, token)
+  const headers = _makeHttpRequest(url + '/tables/' + tableName + '/header', {}, token)
   Logger.log(headers)
   return JSON.parse(headers)
 }
@@ -91,17 +84,23 @@ function applyHeaders(headers) {
 
 function getTable(url, token) {
   // get table name from active sheet
-  const tableName = getActiveTableName_(url, token)
+  const tableName = _getActiveTableName(url, token)
 
-  // get header from first row
-  const header = getCurrentHeader(tableName)
+  // get desired header from first row in spreadsheet
+  const headerFromSpreadsheet = _getCurrentHeader(tableName) ?? ''
 
-  response = makeHttpRequest(url + '/tables/' + tableName + (header ? '?h=' + header : ''), {}, token)
-  displaySheet(tableName, response)
+  // request headers with types from server
+  const headerWithTypes = _makeHttpRequest(url + '/tables/' + tableName + '/header?h=' + headerFromSpreadsheet, {}, token)
+
+  // set cell format in spreadsheet.
+  _setCellFormat(headerWithTypes)
+
+  // request table data from server
+  response = _makeHttpRequest(url + '/tables/' + tableName + '?h=' + headerFromSpreadsheet, {}, token)
+  _displaySheet(tableName, response)
 }
 
-function displaySheet(name, content) {
-  const data = Utilities.parseCsv(content);
+function _activateSheet(name) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
   var sheet = spreadsheet.getSheetByName(name);
   if (sheet) {
@@ -111,11 +110,51 @@ function displaySheet(name, content) {
     // insert and activate new sheet
     sheet = spreadsheet.insertSheet(name);
   }
-  sheet.clear(); // Clear existing data (optional)
+  return sheet
+}
+
+function _setCellFormat(headerWithTypes) {
+  // get active sheet
+  const sheet = SpreadsheetApp.getActiveSheet()
+  // parse header with types
+  const header = JSON.parse(headerWithTypes)
+  // get columns from header
+  const columns = header.columns
+  // filter enabled columns
+    const enabledColumns = columns.filter(column => column.enabled)
+  // iterate over enabled columns
+  for (var i = 0; i < enabledColumns.length; i++) {
+    const column = enabledColumns[i]
+    const type = column.type
+    // get number of rows in the sheet
+    const rows = sheet.getMaxRows() - 1
+    Logger.log('column: ' + (i+1) + ', rows: ' + rows + ', type: ' + type)
+    // get range of column
+    const range = sheet.getRange(2, i+1, rows, 1)
+    if (type == 'number') {
+      range.setNumberFormat('#,##0.00')
+    } else if (type == 'integer') {
+        range.setNumberFormat('#,##0')
+    } else if (type == 'text' || type == 'varchar') {
+      range.setNumberFormat('@')
+    } else if (type == 'boolean') {
+      range.setNumberFormat('@')
+    } else if (type == 'date') {
+      range.setNumberFormat('yyyy-mm-dd')
+    } else {
+      Logger.log('Unknown type: ' + type)
+    }
+  }
+}
+
+function _displaySheet(name, content) {
+  const data = Utilities.parseCsv(content);
+  const sheet = _activateSheet(name)
+  sheet.clear();
   sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
 }
 
-function getCurrentHeader() {
+function _getCurrentHeader() {
   // Access the sheet by name
   var sheet = SpreadsheetApp.getActiveSheet();
   if (!sheet) {
@@ -131,8 +170,8 @@ function getCurrentHeader() {
 
 function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCommit) {
   // get table name from active sheet
-  const tableName = getActiveTableName_(baseUrl, token)
-  const header = getCurrentHeader(tableName)
+  const tableName = _getActiveTableName(baseUrl, token)
+  const header = _getCurrentHeader(tableName)
   const url = baseUrl + '/tables/' + tableName + '?style=sql&skiprows=1'
     + (isInsert ? '&insert=true' : '') 
     + (isUpdate ? '&update=true' : '') 
@@ -140,23 +179,23 @@ function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCo
     + (isExecute ? '&execute=true' : '') 
     + (isCommit ? '&commit=true' : '') 
     + (header ? '&h=' + header : '')
-  const csv = getActiveSheetAsCsv()
+  const csv = _getActiveSheetAsCsv()
   const options = {
     "method": "post",
     "contentType": "text/csv",
     "payload": csv,
   };
 
-  response = makeHttpRequest(url, options, token)
+  response = _makeHttpRequest(url, options, token)
 
   // store last posted table name so we can move back to this sheet after hiding the result sheet
   PropertiesService.getUserProperties().setProperty('last-posted-table-name', tableName)
 
   // show result sheet
-  displaySheet('result', response)
+  _displaySheet('result', response)
 }
 
-function getActiveSheetAsCsv() {
+function _getActiveSheetAsCsv() {
   const sheet = SpreadsheetApp.getActiveSheet();
   const dataRange = sheet.getDataRange().getValues();
 
@@ -193,7 +232,7 @@ function getActiveSheetAsCsv() {
 }
 
 function viewResult() {
-  openTab("result")
+  _activateSheet("result")
 }
 
 function hideResult() {
@@ -214,7 +253,7 @@ function hideResult() {
   }
 }
 
-function getActiveTableName_(url, token) {
+function _getActiveTableName(url, token) {
   // get active sheet's name
   name = SpreadsheetApp.getActiveSheet().getName()
 
@@ -229,7 +268,7 @@ function getActiveTableName_(url, token) {
   return name
 }
 
-function makeHttpRequest(url, options, token = null) {
+function _makeHttpRequest(url, options, token = null) {
     // Log the method, URL and optional payload
   Logger.log(options.method + ' ' + url)
   if (options.payload) {
