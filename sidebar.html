@@ -474,7 +474,7 @@
           td.classList.add('scroll')
           tr.appendChild(td);
 
-          tr.appendChild(createCheckbox(row['default'], false));
+          tr.appendChild(createCheckbox(row['enabled'], false));
 
           td = document.createElement('td');
           td.textContent = row.key;
@@ -546,15 +546,8 @@
 
   <!-- Actions scripts -->
   <script>
-    const buttonDefaultHeader = document.getElementById('getDefaultHeaderButton');
     const buttonExtract = document.getElementById('extractTableButton');
     const buttonPost = document.getElementById('postTableButton');
-
-    function callGetDefaultHeader() {
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      runWithLoader('getDefaultHeader', null, url, token)
-    }
 
     function callExtractTable() {
       const url = localStorage.getItem("url");

@@ -49,17 +49,12 @@ function openTab(name) {
   _activateSheet(name)
 }
 
-function getDefaultHeader(url, token) {
-  // get table name from active sheet
-  const tableName = _getActiveTableName(url, token)
-  const header = _makeHttpRequest(url + '/tables/' + tableName + '/header?style=csv', {}, token)
-  _displaySheet(tableName, header)
-}
-
 function getHeaders(url, token) {
   // get table name from active sheet
   const tableName = _getActiveTableName(url, token)
-  const headers = _makeHttpRequest(url + '/tables/' + tableName + '/header', {}, token)
+  const headerFromSpreadsheet = _getCurrentHeader(tableName) ?? ''
+  Logger.log(headerFromSpreadsheet)
+  const headers = _makeHttpRequest(url + '/tables/' + tableName + '/header?h=' + headerFromSpreadsheet, {}, token)
   Logger.log(headers)
   return JSON.parse(headers)
 }
