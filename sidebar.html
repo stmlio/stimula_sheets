@@ -661,7 +661,11 @@
         // for other errors
         document.getElementById('error-header' ).innerHTML = shortenString(e.message, MAX_LENGTH)
         document.getElementById('error-message' ).innerHTML = e.message
-        document.getElementById('error-stacktrace' ).innerHTML = ''
+        if (e.stack) {
+          document.getElementById('error-stacktrace' ).innerHTML = e.toString() + '\n' + e.stack
+          const stackTraceButton = document.getElementById("stackTraceButton");
+          stackTraceButton.style.display = "block";
+        }
       }
     }
 

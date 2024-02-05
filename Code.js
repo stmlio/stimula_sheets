@@ -136,6 +136,8 @@ function _setCellFormat(headerWithTypes) {
       range.setNumberFormat('@')
     } else if (type == 'date') {
       range.setNumberFormat('yyyy-mm-dd')
+    } else if (type == 'timestamp') {
+      range.setNumberFormat('yyyy-mm-dd hh:mm:ss')
     } else {
       Logger.log('Unknown type: ' + type)
     }
