@@ -153,14 +153,20 @@ function _displaySheet(name, content) {
 
 function _getCurrentHeader() {
   // Access the sheet by name
-  var sheet = SpreadsheetApp.getActiveSheet();
+  const sheet = SpreadsheetApp.getActiveSheet();
   if (!sheet) {
     // sheet doesn't exist yet, return empty header
     return ''
   }
 
+  // get number of columns
+  const columns = sheet.getLastColumn()
+
   // Get the data from the first row (assuming headers are in the first row)
-  var firstRowData = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  let firstRowData = ''
+  if (columns > 0) {
+    firstRowData = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  }
 
   return firstRowData
 }
@@ -170,11 +176,11 @@ function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCo
   const tableName = _getActiveTableName(baseUrl, token)
   const header = _getCurrentHeader(tableName)
   const url = baseUrl + '/tables/' + tableName + '?style=sql&skiprows=1'
-    + (isInsert ? '&insert=true' : '') 
-    + (isUpdate ? '&update=true' : '') 
-    + (isDelete ? '&delete=true' : '') 
-    + (isExecute ? '&execute=true' : '') 
-    + (isCommit ? '&commit=true' : '') 
+    + (isInsert ? '&insert=true' : '')
+    + (isUpdate ? '&update=true' : '')
+    + (isDelete ? '&delete=true' : '')
+    + (isExecute ? '&execute=true' : '')
+    + (isCommit ? '&commit=true' : '')
     + (header ? '&h=' + header : '')
   const csv = _getActiveSheetAsCsv()
   const options = {
@@ -233,7 +239,7 @@ function viewResult() {
 }
 
 function hideResult() {
-  // delete the result sheet 
+  // delete the result sheet
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
   const resultSheet = spreadsheet.getSheetByName('result')
   if (resultSheet) {
