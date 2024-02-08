@@ -291,7 +291,7 @@
             </tbody>
           </table>
         </div>
-        <button id="refreshHeadersButton" class="small-button" onclick="callRefreshHeaders()">Refresh</button>
+        <button id="defaultHeadersButton" class="small-button" onclick="callDefaultHeaders()">Default</button>
         <button id="applyHeadersButton" class="small-button" onclick="callApplyHeaders()">Apply</button>
       </div>
     </div>
@@ -503,7 +503,15 @@
       return td
     }
 
+    function callDefaultHeaders() {
+      // fill the headers table with default headers, ignoring the current header line
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      runWithLoader('getDefaultHeaders', fillHeadersTable, url, token)
+    }
+
     function callRefreshHeaders() {
+      // fill the headers table with default headers, merged with the current header line
       const url = localStorage.getItem("url");
       const token = localStorage.getItem("access_token");
       runWithLoader('getHeaders', fillHeadersTable, url, token)
