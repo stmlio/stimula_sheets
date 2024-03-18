@@ -7,7 +7,7 @@ function onOpen() {
 }
 
 function openSidebar() {
-  const version = 'V2'
+  const version = '0.1'
   var htmlOutput = HtmlService.createHtmlOutputFromFile('sidebar')
     .setTitle('Instant Data Access (' + version + ')')
     .setWidth(100);
