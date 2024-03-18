@@ -366,6 +366,8 @@
       const db = document.forms.odooConnectForm.odooDatabaseInput.value;
       const user = document.forms.odooConnectForm.odooUserInput.value;
       const password = document.forms.odooConnectForm.odooPasswordInput.value;
+      // interestingly, you can always connect to an odoo.sh instance using <db>.dev.odoo.com, even a production database
+      // this is nice, because we don't have to ask the user to enter the full URL
       const url = 'https://' + db + '.dev.odoo.com/data_access/1.0'
       localStorage.setItem("url", url);
       console.log(url)
