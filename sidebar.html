@@ -205,7 +205,7 @@
 </script>
   <div class="accordion">
     <div class="section">
-      <div class="header" onclick="toggleSection(1)">Connection</div>
+      <div class="header" onclick="toggleSection(0)">Connection</div>
       <div class="content" id="section1">
         <div class="tabs-container">
           <div class="tab active" onclick="showTab('tab1')">odoo.sh</div>
@@ -255,7 +255,7 @@
     </div>
 
     <div class="section">
-      <div class="header" onclick="toggleSection(2)">Tables</div>
+      <div class="header" onclick="toggleSection(1)">Tables</div>
       <div class="content" id="section2">
         <label for="filterInput">Filter Tables:</label>
         <input type="text" id="filterInput" placeholder="Filter list"/><br/>
@@ -270,7 +270,7 @@
     </div>
 
     <div class="section">
-      <div class="header" onclick="toggleSection(3)">Headers</div>
+      <div class="header" onclick="toggleSection(2)">Headers</div>
       <div class="content" id="section3">
         <!-- Show Headers -->
         <div class="scrollable-div">
@@ -297,7 +297,7 @@
     </div>
 
     <div class="section">
-      <div class="header" id="header4" onclick="toggleSection(4)">Actions</div>
+      <div class="header" id="header4" onclick="toggleSection(3)">Actions</div>
       <div class="content" id="section4">
         <!-- Extract table contents -->
         <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button><br/>
@@ -331,7 +331,7 @@
       const sections = document.getElementsByClassName("content");
       for (var i = 0; i < sections.length; i++) {
         // open if it's the right section and it's currently closed, close otherwise
-        const open = (i === sectionNumber - 1) && !sections[i].style.maxHeight
+        const open = (i === sectionNumber) && !sections[i].style.maxHeight
         sections[i].style.maxHeight = open ? sections[i].scrollHeight + "px" : null
         if(open) {
           onSectionOpen(i)
@@ -397,7 +397,7 @@
       const user = document.forms.odooConnectForm.odooUserInput.value;
       localStorage.setItem("db", db);
       localStorage.setItem("user", user);
-      toggleSection(2)
+      toggleSection(1)
     }
 
   </script>
@@ -464,7 +464,7 @@
     }
 
     function openTabSuccess() {
-      toggleSection(3)
+      toggleSection(2)
     }
 
   </script>
@@ -545,7 +545,7 @@
     }
 
     function applyHeadersSuccess() {
-      toggleSection(4)
+      toggleSection(3)
     }
 
     var row;
@@ -715,7 +715,7 @@
   <script>
     // Now that all functions are available, open the first section on page load
     console.log("Opening first section")
-    toggleSection(1)
+    toggleSection(0)
   </script>
 
 </body>
