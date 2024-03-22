@@ -84,12 +84,22 @@ function applyHeaders(headers) {
   sheet.getRange(1, 1, 1, data.length).setValues([data]);
 }
 
-function testWhereClause(url, token, whereClause) {
-  //   return random integer between 0 and 100
-    return Math.floor(Math.random() * 100)
+function getRowCount(base_url, token, whereClause) {
+  // get table name from active sheet, don't test if it's a table, the count call is a good test by itself
+  tableName = SpreadsheetApp.getActiveSheet().getName()
+  // URL encode where clause
+  const safe_whereClause = encodeURIComponent(whereClause)
+  // create URL
+  const url = base_url + '/tables/' + tableName + '/count?q=' + safe_whereClause
+  // get count of rows that match where clause
+  const response = _makeHttpRequest(url, {}, token)
+  // parse json
+  const data = JSON.parse(response)
+  // return count
+  return data.count
 }
 
-function getTable(url, token) {
+function getTable(url, token, whereClause) {
   // get table name from active sheet
   const tableName = _getActiveTableName(url, token)
 
@@ -103,7 +113,7 @@ function getTable(url, token) {
   _setCellFormat(headerWithTypes)
 
   // request table data from server
-  response = _makeHttpRequest(url + '/tables/' + tableName + '?h=' + headerFromSpreadsheet, {}, token)
+  response = _makeHttpRequest(url + '/tables/' + tableName + '?h=' + headerFromSpreadsheet + '&q=' + whereClause, {}, token)
   _displaySheet(tableName, response)
 }
 
@@ -183,7 +193,7 @@ function _getCurrentHeader() {
   return firstRowData
 }
 
-function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCommit) {
+function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
   // get table name from active sheet
   const tableName = _getActiveTableName(baseUrl, token)
   const header = _getCurrentHeader(tableName)
@@ -194,6 +204,7 @@ function postTable(baseUrl, token, isInsert, isUpdate, isDelete, isExecute, isCo
     + (isExecute ? '&execute=true' : '')
     + (isCommit ? '&commit=true' : '')
     + (header ? '&h=' + header : '')
+    + (whereClause ? '&q=' + whereClause : '')
   const csv = _getActiveSheetAsCsv()
   const options = {
     "method": "post",

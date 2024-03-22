@@ -305,8 +305,8 @@
         <input type="text" id="whereClauseInput" value="" class="full-width-input"><br/>
         <div id="testWhereClauseResult"><br/>
         </div>
-        <button id="testWhereClauseButton" class="small-button" onclick="callTestWhereClause()">Test Filter</button>
-        <button id="applyWhereClauseButton" class="small-button" onclick="applyWhereClause()">Apply Filter</button>
+        <button id="testWhereClauseButton" class="small-button" onclick="callGetRowCount()">Test</button>
+        <button id="applyWhereClauseButton" class="small-button" onclick="applyWhereClause()">Apply</button>
       </div>
     </div>
   </div>
@@ -596,15 +596,15 @@
       document.getElementById('whereClauseInput').value = whereClause;
     }
 
-    function callTestWhereClause() {
+    function callGetRowCount() {
       const url = localStorage.getItem("url");
       const token = localStorage.getItem("access_token");
       const whereClause = document.getElementById('whereClauseInput').value;
       // call backend to test the where clause for errors and to display the number of matching records
-      runWithLoader('testWhereClause', displayWhereClauseTestResult, url, token, whereClause)
+      runWithLoader('getRowCount', displayRowCountResult, url, token, whereClause)
     }
 
-    function displayWhereClauseTestResult(recordCount) {
+    function displayRowCountResult(recordCount) {
       // display recordCount in testWhereClauseResult
         const testWhereClauseResult = document.getElementById('testWhereClauseResult');
         testWhereClauseResult.innerHTML = 'Number of matching records: ' + recordCount;
@@ -624,13 +624,16 @@
 
   <!-- Actions scripts -->
   <script>
-    const buttonExtract = document.getElementById('extractTableButton');
-    const buttonPost = document.getElementById('postTableButton');
 
     function callExtractTable() {
       const url = localStorage.getItem("url");
       const token = localStorage.getItem("access_token");
-      runWithLoader('getTable', null, url, token)
+      // check if where clause filter is enabled
+      const whereClauseCheckbox = document.getElementById('whereClauseCheckbox').checked;
+      // if enabled, get where clause
+      const whereClause = whereClauseCheckbox ? document.getElementById('whereClauseInput').value : null;
+      //   read the selected table name
+      runWithLoader('getTable', null, url, token, whereClause)
     }
 
     function callPostTable() {
@@ -641,7 +644,9 @@
       const isDelete = document.getElementById('deleteCheckbox').checked;
       const isExecute = document.getElementById('executeCheckbox').checked;
       const isCommit = document.getElementById('commitCheckbox').checked;
-      runWithLoader('postTable', null, url, token, isInsert, isUpdate, isDelete, isExecute, isCommit)
+      const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
+      const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
+      runWithLoader('postTable', null, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit)
     }
 
     function callViewResult() {
