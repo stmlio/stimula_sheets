@@ -84,6 +84,11 @@ function applyHeaders(headers) {
   sheet.getRange(1, 1, 1, data.length).setValues([data]);
 }
 
+function testWhereClause(url, token, whereClause) {
+  //   return random integer between 0 and 100
+    return Math.floor(Math.random() * 100)
+}
+
 function getTable(url, token) {
   // get table name from active sheet
   const tableName = _getActiveTableName(url, token)

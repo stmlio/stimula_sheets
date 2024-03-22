@@ -297,8 +297,23 @@
     </div>
 
     <div class="section">
-      <div class="header" id="header4" onclick="toggleSection(3)">Actions</div>
+      <div class="header" onclick="toggleSection(3)">Filter</div>
       <div class="content" id="section3">
+        <!-- Filter conditions -->
+        <input type="checkbox" id="whereClauseCheckbox" checked><label for="whereClauseCheckbox">Enable Filter</label><br/>
+        <label for="whereClauseInput">Where Clause:</label><br/>
+        <input type="text" id="whereClauseInput" value="" class="full-width-input"><br/>
+        <div id="testWhereClauseResult"><br/>
+        </div>
+        <button id="testWhereClauseButton" class="small-button" onclick="callTestWhereClause()">Test Filter</button>
+        <button id="applyWhereClauseButton" class="small-button" onclick="applyWhereClause()">Apply Filter</button>
+      </div>
+    </div>
+  </div>
+
+    <div class="section">
+      <div class="header" onclick="toggleSection(4)">Actions</div>
+      <div class="content" id="section4">
         <!-- Extract table contents -->
         <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button><br/>
         <!-- Load/Post table contents -->
@@ -353,6 +368,8 @@
         callUpdateTables()
       } else if (i===2) {
         callRefreshHeaders()
+      } else if (i==3) {
+        fillWhereClauseParameters()
       }
     }
 
@@ -563,6 +580,45 @@
             e.target.parentNode.after(row);
         else
             e.target.parentNode.before(row);
+    }
+  </script>
+
+
+  <!-- Where clause scripts -->
+  <script>
+
+    function fillWhereClauseParameters() {
+      // clear record count message
+      document.getElementById('testWhereClauseResult').innerHTML = '';
+      const whereClauseCheckbox = localStorage.getItem("whereClauseCheckbox");
+      const whereClause = localStorage.getItem("whereClause");
+      document.getElementById('whereClauseCheckbox').checked = whereClauseCheckbox === 'true';
+      document.getElementById('whereClauseInput').value = whereClause;
+    }
+
+    function callTestWhereClause() {
+      const url = localStorage.getItem("url");
+      const token = localStorage.getItem("access_token");
+      const whereClause = document.getElementById('whereClauseInput').value;
+      // call backend to test the where clause for errors and to display the number of matching records
+      runWithLoader('testWhereClause', displayWhereClauseTestResult, url, token, whereClause)
+    }
+
+    function displayWhereClauseTestResult(recordCount) {
+      // display recordCount in testWhereClauseResult
+        const testWhereClauseResult = document.getElementById('testWhereClauseResult');
+        testWhereClauseResult.innerHTML = 'Number of matching records: ' + recordCount;
+    }
+
+    function applyWhereClause() {
+      // get where clause checkbox and clause
+      const whereClauseCheckbox = document.getElementById('whereClauseCheckbox');
+      const whereClause = document.getElementById('whereClauseInput').value;
+      // store in local storage
+      localStorage.setItem("whereClauseCheckbox", whereClauseCheckbox.checked);
+      localStorage.setItem("whereClause", whereClause);
+      // open next section
+      toggleSection(4)
     }
   </script>
 
