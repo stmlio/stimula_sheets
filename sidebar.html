@@ -347,19 +347,27 @@
     }
 
     function onSectionOpen(i) {
-      if (i===1) {
+      if (i===0) {
+        fillOdooConnectParameters()
+      } else if (i===1) {
         callUpdateTables()
       } else if (i===2) {
         callRefreshHeaders()
       }
     }
 
-    // Open the first section on page load
-    toggleSection(1)
   </script>
 
   <script>
     // connect scripts
+
+    function fillOdooConnectParameters() {
+      const db = localStorage.getItem("db");
+      const user = localStorage.getItem("user");
+      document.forms.odooConnectForm.odooDatabaseInput.value = db;
+      document.forms.odooConnectForm.odooUserInput.value = user;
+    }
+
     function submitOdooConnectForm(event) {
       event.preventDefault();
       localStorage.setItem("access_token", "");
@@ -371,7 +379,7 @@
       const url = 'https://' + db + '.dev.odoo.com/data_access/1.0'
       localStorage.setItem("url", url);
       console.log(url)
-      runWithLoader('doOdooConnect', onSuccess, url, db, user, password)
+      runWithLoader('doOdooConnect', onOdooConnectSuccess, url, db, user, password)
     }
 
     function submitStandaloneConnectForm(event) {
@@ -382,9 +390,13 @@
       runWithLoader('doStandaloneConnect', onSuccess, url, document.forms.standaloneConnectForm)
     }
 
-    function onSuccess(response) {
+    function onOdooConnectSuccess(response) {
       var token = response['token']
       localStorage.setItem("access_token", token);
+      const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+      const user = document.forms.odooConnectForm.odooUserInput.value;
+      localStorage.setItem("db", db);
+      localStorage.setItem("user", user);
       toggleSection(2)
     }
 
@@ -700,7 +712,11 @@
 
   </script>
 
-
+  <script>
+    // Now that all functions are available, open the first section on page load
+    console.log("Opening first section")
+    toggleSection(1)
+  </script>
 
 </body>
 
