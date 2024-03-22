@@ -197,16 +197,16 @@
     tabs.forEach(tab => tab.classList.remove('active'));
     event.currentTarget.classList.add('active');
 
-    const section1 = document.getElementById("section1");
+    const section0 = document.getElementById("section0");
 
-    section1.style.maxHeight = section1.scrollHeight + "px";
+    section0.style.maxHeight = section0.scrollHeight + "px";
 
   }
 </script>
   <div class="accordion">
     <div class="section">
       <div class="header" onclick="toggleSection(0)">Connection</div>
-      <div class="content" id="section1">
+      <div class="content" id="section0">
         <div class="tabs-container">
           <div class="tab active" onclick="showTab('tab1')">odoo.sh</div>
           <div class="tab" onclick="showTab('tab2')">standalone</div>
@@ -256,7 +256,7 @@
 
     <div class="section">
       <div class="header" onclick="toggleSection(1)">Tables</div>
-      <div class="content" id="section2">
+      <div class="content" id="section1">
         <label for="filterInput">Filter Tables:</label>
         <input type="text" id="filterInput" placeholder="Filter list"/><br/>
         <input type="checkbox" id="includeEmpty"/>
@@ -271,7 +271,7 @@
 
     <div class="section">
       <div class="header" onclick="toggleSection(2)">Headers</div>
-      <div class="content" id="section3">
+      <div class="content" id="section2">
         <!-- Show Headers -->
         <div class="scrollable-div">
           <table>
@@ -298,7 +298,7 @@
 
     <div class="section">
       <div class="header" id="header4" onclick="toggleSection(3)">Actions</div>
-      <div class="content" id="section4">
+      <div class="content" id="section3">
         <!-- Extract table contents -->
         <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button><br/>
         <!-- Load/Post table contents -->
@@ -714,7 +714,6 @@
 
   <script>
     // Now that all functions are available, open the first section on page load
-    console.log("Opening first section")
     toggleSection(0)
   </script>
 
