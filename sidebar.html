@@ -178,6 +178,11 @@
     .tab-content.active {
       display: block;
     }
+
+    textarea {
+      resize: vertical;
+      overflow: auto;
+    }
   </style>
 </head>
 
@@ -300,9 +305,9 @@
       <div class="header" onclick="toggleSection(3)">Filter</div>
       <div class="content" id="section3">
         <!-- Filter conditions -->
-        <input type="checkbox" id="whereClauseCheckbox" checked><label for="whereClauseCheckbox">Enable Filter</label><br/>
+        <input type="checkbox" id="whereClauseCheckbox" checked><label for="whereClauseCheckbox">Enable Filter</label><br/><br/>
         <label for="whereClauseInput">Where Clause:</label><br/>
-        <input type="text" id="whereClauseInput" value="" class="full-width-input"><br/>
+        <textarea id="whereClauseInput" class="full-width-input"></textarea><br/>
         <div id="testWhereClauseResult"><br/>
         </div>
         <button id="testWhereClauseButton" class="small-button" onclick="callGetRowCount()">Test</button>

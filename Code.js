@@ -87,10 +87,14 @@ function applyHeaders(headers) {
 function getRowCount(base_url, token, whereClause) {
   // get table name from active sheet, don't test if it's a table, the count call is a good test by itself
   tableName = SpreadsheetApp.getActiveSheet().getName()
+  // get current header, because that defines the query we want to restrict
+  const header = _getCurrentHeader(tableName)
+  // URL encode header
+  const safe_header = encodeURIComponent(header)
   // URL encode where clause
   const safe_whereClause = encodeURIComponent(whereClause)
   // create URL
-  const url = base_url + '/tables/' + tableName + '/count?q=' + safe_whereClause
+  const url = base_url + '/tables/' + tableName + '/count?h=' + safe_header + '&q=' + safe_whereClause
   // get count of rows that match where clause
   const response = _makeHttpRequest(url, {}, token)
   // parse json
