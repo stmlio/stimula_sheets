@@ -191,10 +191,17 @@ function _getCurrentHeader() {
   // Get the data from the first row (assuming headers are in the first row)
   let firstRowData = ''
   if (columns > 0) {
-    firstRowData = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const values = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    // values may not be an array, so we need to check
+    if (values.length > 0) {
+      firstRowData = values.join(',')
+    }
   }
 
-  return firstRowData
+  // convert to URL safe string
+  encodedString = encodeURIComponent(firstRowData)
+
+  return encodedString
 }
 
 function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
