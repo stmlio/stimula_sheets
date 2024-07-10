@@ -1,15 +1,15 @@
 function onOpen() {
   SpreadsheetApp
     .getUi()
-    .createMenu("Data Access")
-    .addItem("Instant Data Access", "openSidebar")
+    .createMenu("Stimula")
+    .addItem("Instant STML", "openSidebar")
     .addToUi();
 }
 
 function openSidebar() {
   const version = '0.1'
   var htmlOutput = HtmlService.createHtmlOutputFromFile('sidebar')
-    .setTitle('Instant Data Access (' + version + ')')
+    .setTitle('Instant STML (' + version + ')')
     .setWidth(100);
   SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
@@ -116,8 +116,11 @@ function getTable(url, token, whereClause) {
   // set cell format in spreadsheet.
   _setCellFormat(headerWithTypes)
 
+  // create where parameter if provided
+  const whereParameter = whereClause ? '&q=' + whereClause : ''
+
   // request table data from server
-  response = _makeHttpRequest(url + '/tables/' + tableName + '?h=' + headerFromSpreadsheet + '&q=' + whereClause, {}, token)
+  response = _makeHttpRequest(url + '/tables/' + tableName + '?h=' + headerFromSpreadsheet + whereParameter, {}, token)
   _displaySheet(tableName, response)
 }
 
@@ -306,14 +309,15 @@ function _getActiveTableName(url, token) {
 }
 
 function _makeHttpRequest(url, options, token = null) {
-    // Log the method, URL and optional payload
-  Logger.log(options.method + ' ' + url)
+  // Set default method
+  const method = options.method || 'GET'
+
+  // Log the method, URL and optional payload
+  Logger.log(method + ' ' + url)
   if (options.payload) {
     Logger.log(options.payload)
   }
 
-  // Set default options
-  options.method = options.method || 'GET'
   // Set the muteHttpExceptions option to true to prevent HTTP 4xx and 5xx errors from being treated as exceptions.
   options.muteHttpExceptions = true
   if (token) {
