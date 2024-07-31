@@ -326,7 +326,8 @@
         <input type="checkbox" id="updateCheckbox" checked><label for="updateCheckbox">Update</label><br/>
         <input type="checkbox" id="deleteCheckbox" checked><label for="deleteCheckbox">Delete</label><br/>
         <input type="checkbox" id="executeCheckbox"><label for="executeCheckbox">Execute SQL</label><br/>
-        <input type="checkbox" id="commitCheckbox"><label for="commitCheckbox">Commit SQL</label>
+        <input type="checkbox" id="commitCheckbox"><label for="commitCheckbox">Commit SQL</label><br/>
+        <input type="checkbox" id="deduplicateCheckbox"><label for="deduplicateCheckbox">Deduplicate</label>
         <button id="postTableButton" onclick="callPostTable()">Post Table</button>
         <button id="viewResultButton" class="small-button" onclick="callViewResult()">View Result</button>
         <button id="hideResultButton" class="small-button" onclick="callHideResult()">Hide Result</button>
@@ -649,9 +650,10 @@
       const isDelete = document.getElementById('deleteCheckbox').checked;
       const isExecute = document.getElementById('executeCheckbox').checked;
       const isCommit = document.getElementById('commitCheckbox').checked;
+      const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
       const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
       const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
-      runWithLoader('postTable', null, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit)
+      runWithLoader('postTable', null, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
     }
 
     function callViewResult() {

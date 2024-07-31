@@ -195,19 +195,27 @@ function _getCurrentHeader() {
   let firstRowData = ''
   if (columns > 0) {
     const values = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-    // values may not be an array, so we need to check
-    if (values.length > 0) {
-      firstRowData = values.join(',')
-    }
+    // Convert the first row to CSV format
+    var csvRow = values.map(cell => {
+      // Escape double quotes by doubling them
+      if (typeof cell === 'string' && cell.includes('"')) {
+        cell = cell.replace(/"/g, '""');
+      }
+      // Wrap cell in double quotes if it contains commas or double quotes
+      if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+        cell = `"${cell}"`;
+      }
+      return cell;
+    }).join(',');
   }
 
   // convert to URL safe string
-  encodedString = encodeURIComponent(firstRowData)
+  encodedString = encodeURIComponent(csvRow)
 
   return encodedString
 }
 
-function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
+function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
   // get table name from active sheet
   const tableName = _getActiveTableName(baseUrl, token)
   const header = _getCurrentHeader(tableName)
@@ -217,6 +225,7 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
     + (isDelete ? '&delete=true' : '')
     + (isExecute ? '&execute=true' : '')
     + (isCommit ? '&commit=true' : '')
+    + (isDeduplicate ? '&deduplicate=true' : '')
     + (header ? '&h=' + header : '')
     + (whereClause ? '&q=' + whereClause : '')
   const csv = _getActiveSheetAsCsv()
@@ -253,6 +262,11 @@ function _getActiveSheetAsCsv() {
       if (cell.toString().match(/["\n,]/)) {
         cell = '"' + cell.replace(/"/g, '""') + '"';
       }
+
+        // if date format, convert to ISO format
+        if (Object.prototype.toString.call(cell) === '[object Date]' && !isNaN(cell)) {
+            cell = cell.toISOString();
+        }
 
       // Append the cell value to the CSV string
       csv += cell;
@@ -296,6 +310,9 @@ function hideResult() {
 function _getActiveTableName(url, token) {
   // get active sheet's name
   name = SpreadsheetApp.getActiveSheet().getName()
+
+  // only keep characters before the first non-alphanumeric character
+  name = name.replace(/[^a-zA-Z0-9_].*/, '')
 
   // check if it's a table
   filter = '^' + name + '$'
