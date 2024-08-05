@@ -329,9 +329,9 @@
         <input type="checkbox" id="commitCheckbox"><label for="commitCheckbox">Commit SQL</label><br/>
         <input type="checkbox" id="deduplicateCheckbox"><label for="deduplicateCheckbox">Deduplicate</label>
         <button id="postTableButton" onclick="callPostTable()">Post Table</button>
+        <div id="summary-message" class="summary-message"></div>
         <button id="viewResultButton" class="small-button" onclick="callViewResult()">View Result</button>
         <button id="hideResultButton" class="small-button" onclick="callHideResult()">Hide Result</button>
-      </div>
     </div>
   </div>
 
@@ -653,7 +653,20 @@
       const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
       const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
       const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
-      runWithLoader('postTable', null, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
+      runWithLoader('postTable', onPostTableResult, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
+    }
+
+    function onPostTableResult(summary) {
+      //   log summary
+        console.log('summary: ' + summary);
+
+      //   display summary in summary-message div
+        const summaryMessage = document.getElementById('summary-message');
+
+        // convert summary to json string
+        const summaryJson = JSON.stringify(summary, null, 2);
+
+        summaryMessage.innerHTML = summaryJson;
     }
 
     function callViewResult() {

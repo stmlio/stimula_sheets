@@ -176,6 +176,7 @@ function _setCellFormat(headerWithTypes) {
 function _displaySheet(name, content) {
   const data = Utilities.parseCsv(content);
   const sheet = _activateSheet(name)
+  _clearPostResult(name)
   sheet.clear();
   sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
 }
@@ -216,10 +217,12 @@ function _getCurrentHeader() {
 }
 
 function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
+  // get active sheet name, we'll post it as context
+  const sheetName = SpreadsheetApp.getActiveSheet().getName()
   // get table name from active sheet
   const tableName = _getActiveTableName(baseUrl, token)
   const header = _getCurrentHeader(tableName)
-  const url = baseUrl + '/tables/' + tableName + '?style=sql&skiprows=1'
+  const url = baseUrl + '/tables/' + tableName + '?style=full&skiprows=1'
     + (isInsert ? '&insert=true' : '')
     + (isUpdate ? '&update=true' : '')
     + (isDelete ? '&delete=true' : '')
@@ -228,6 +231,7 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
     + (isDeduplicate ? '&deduplicate=true' : '')
     + (header ? '&h=' + header : '')
     + (whereClause ? '&q=' + whereClause : '')
+    + '&context=' + sheetName
   const csv = _getActiveSheetAsCsv()
   const options = {
     "method": "post",
@@ -235,13 +239,23 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
     "payload": csv,
   };
 
+  // clear formatting
+    _clearPostResult(sheetName)
+
   response = _makeHttpRequest(url, options, token)
 
   // store last posted table name so we can move back to this sheet after hiding the result sheet
   PropertiesService.getUserProperties().setProperty('last-posted-table-name', tableName)
 
-  // show result sheet
-  _displaySheet('result', response)
+  // parse response
+  result = JSON.parse(response)
+
+  // display line-by-line feedback in sheets
+    _displayPostFullReport(result['rows'], sheetName, isExecute)
+
+
+  // return summary for the front-end to display
+  return result['summary']
 }
 
 function _getActiveSheetAsCsv() {
@@ -283,6 +297,85 @@ function _getActiveSheetAsCsv() {
     }
   }
   return csv
+}
+
+function _displayPostResult(content) {
+  const data = Utilities.parseCsv(content);
+  const sheet = _activateSheet('result')
+  sheet.clear();
+  sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+}
+
+function _clearPostResult(context) {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+  var sheet = spreadsheet.getSheetByName(context);
+  if (!sheet) {
+    return
+  }
+    // remove background color of complete sheet
+  if (sheet.getLastRow() > 0) {
+    sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).setBackground(null)
+    // clear notes of first column
+    sheet.getRange(1, 1, sheet.getLastRow(), 1).clearNote()
+  }
+
+}
+
+function _displayPostFullReport(rows, context, isExecute) {
+//   find and activate sheet based on context
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+  var sheet = spreadsheet.getSheetByName(context);
+  if (!sheet) {
+    return
+  }
+
+  // iterate rows
+    for (var i = 0; i < rows.length; i++) {
+        const row = rows[i]
+
+      // convert from string to integer
+
+       const lineNumber = parseInt(row.line_number)
+      // undefined also means success
+        const success = row.success || row.success === undefined
+
+      // log line and success
+        Logger.log('Line: ' + lineNumber + ', Success: ' + success)
+        // get line number
+      // select full row
+        const range = sheet.getRange(lineNumber + 2, 1, 1, sheet.getLastColumn())
+
+      // set background color based on success
+        if (success) {
+          if (isExecute) {
+            // bright green for execute
+            range.setBackground('#44FF44')
+          } else {
+            // light green for not execute
+            range.setBackground('#AAFFAA')
+          }
+        } else {
+            range.setBackground('#FF4444')
+        }
+
+    //   select first column of row
+        const cell = sheet.getRange(lineNumber + 2, 1)
+
+      // get error
+      const error = row.error
+      // get query and parameters
+        const query = row.query
+        const params = row.params
+        // format error
+        errorMessage = error ? 'Error: ' + error + '\n\n' : ''
+        // add query
+        errorMessage += query + '\n\n'
+        // add parameters as json string
+        errorMessage += JSON.stringify(params, null, 2)
+
+        // set error message as note
+        cell.setNote(errorMessage)
+    }
 }
 
 function viewResult() {
