@@ -2,325 +2,333 @@
 <html lang="en_US">
 
 <head>
-  <base target="_top">
-  <title>Data Access</title>
-  <style>
-    div,
-    button {
-      font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
-      font-size: 14px;
-    }
+    <base target="_top">
+    <title>Data Access</title>
+    <style>
+        div,
+        button {
+            font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+        }
 
-    label {
-      margin: 2px;
-    }
+        label {
+            margin: 2px;
+        }
 
-    ul {
-      padding-left: 16px;
-      white-space: nowrap;
-    }
+        ul {
+            padding-left: 16px;
+            white-space: nowrap;
+        }
 
-    li {
-      cursor: pointer;
-    }
+        li {
+            cursor: pointer;
+        }
 
-    button {
-      background: #fff;
-      border-radius: 28px;
-      color: #1f1f1f;
-      border-color: transparent;
-      margin: 4px;
-      width: 242px;
-      padding: 4px 8px;
-    }
+        button {
+            background: #fff;
+            border-radius: 28px;
+            color: #1f1f1f;
+            border-color: transparent;
+            margin: 4px;
+            width: 242px;
+            padding: 4px 8px;
+        }
 
-    button:hover {
-      background-color: #ddd;
-    }
+        button:hover {
+            background-color: #ddd;
+        }
 
-    input {
-      margin: 4px 0;
-    }
+        input {
+            margin: 4px 0;
+        }
 
-    .full-width-input {
-      box-sizing: border-box;
-      width: calc(100% - 5px);
-    }
+        .full-width-input {
+            box-sizing: border-box;
+            width: calc(100% - 5px);
+        }
 
-    .accordion {}
+        .accordion {
+        }
 
-    .section {
-      border: 1px solid #f1f1f1;
-      border-radius: 20px;
-      background-color: #edf2fa;
-      margin-bottom: 8px;
-    }
+        .section {
+            border: 1px solid #f1f1f1;
+            border-radius: 20px;
+            background-color: #edf2fa;
+            margin-bottom: 8px;
+        }
 
-    .header {
-      color: #333;
-      padding: 10px;
-      cursor: pointer;
-      border-radius: 20px;
-    }
+        .header {
+            color: #333;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 20px;
+        }
 
-    .header:hover {
-      background-color: #ddd;
-    }
+        .header:hover {
+            background-color: #ddd;
+        }
 
-    .error-header {
-      color: red;
-    }
+        .error-header {
+            color: red;
+        }
 
-    .content,
-    .error-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.2s ease-out;
-      padding-left: 8px;
-      /* padding-right: 8px; */
-    }
+        .content,
+        .error-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            padding-left: 8px;
+            /* padding-right: 8px; */
+        }
 
-    .error-content {
-      white-space: pre-line;
-    }
+        .error-content {
+            white-space: pre-line;
+        }
 
-    .scrollable-div {
-      height: 400px;
-      overflow-y: auto;
-    }
+        .scrollable-div {
+            height: 400px;
+            overflow-y: auto;
+        }
 
-    .small-button {
-      width: 115px;
-    }
+        .small-button {
+            width: 115px;
+        }
 
-    td,
-    tr,
-    th {
-      border: 1px solid white;
-      border-collapse: collapse;
-    }
+        td,
+        tr,
+        th {
+            border: 1px solid white;
+            border-collapse: collapse;
+        }
 
-    /* Selector is used dynamically when creating header section */
-    /* noinspection CssUnusedSymbol */
-    .scroll {
-      cursor: all-scroll;
-    }
+        /* Selector is used dynamically when creating header section */
+        /* noinspection CssUnusedSymbol */
+        .scroll {
+            cursor: all-scroll;
+        }
 
-    table {
-      border-collapse: collapse;
-      -webkit-user-select: none;
-      /* Safari */
-      -ms-user-select: none;
-      /* IE 10+ and Edge */
-      user-select: none;
-      /* Standard syntax */
-    }
+        table {
+            border-collapse: collapse;
+            -webkit-user-select: none;
+            /* Safari */
+            -ms-user-select: none;
+            /* IE 10+ and Edge */
+            user-select: none;
+            /* Standard syntax */
+        }
 
-    .tooltip {
-      /* display: inline-block; */
-      cursor: pointer;
-      position: relative;
-    }
+        .tooltip {
+            /* display: inline-block; */
+            cursor: pointer;
+            position: relative;
+        }
 
-    .tooltiptext {
-      visibility: hidden;
-      width: 120px;
-      background-color: #555;
-      color: #fff;
-      text-align: center;
-      border-radius: 2px;
-      padding: 2px;
-      position: absolute;
-      z-index: 1;
-      opacity: 0;
-      transition: opacity 0.3s;
-      left: -115px;
-      top: 10px;
-    }
+        .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 2px;
+            position: absolute;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+            left: -115px;
+            top: 10px;
+        }
 
-    .tooltip:hover .tooltiptext {
-      visibility: visible;
-      opacity: 1;
-    }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
 
-    .tabs-container {
-      display: flex;
-      margin-right: 5px;
-    }
+        .tabs-container {
+            display: flex;
+            margin-right: 5px;
+        }
 
-    .tab {
-      flex: 1;
-      text-align: center;
-      padding: 5px;
-      cursor: pointer;
-      background-color: #bbb;
-      border: 1px solid #ccc;
-      border-bottom: none;
-      border-radius: 10px 10px 0 0;
-      /*margin-right: -1px;*/
-      position: relative;
-    }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            cursor: pointer;
+            background-color: #bbb;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            /*margin-right: -1px;*/
+            position: relative;
+        }
 
-    .tab.active {
-      background-color: #edf2fa; /* Set the active tab color */
-      /*color: #fff;*/
-      z-index: 1;
-    }
+        .tab.active {
+            background-color: #edf2fa; /* Set the active tab color */
+            /*color: #fff;*/
+            z-index: 1;
+        }
 
-    .tabs-content {
-      /*margin: 20px;*/
-    }
+        .tabs-content {
+            /*margin: 20px;*/
+        }
 
-    .tab-content {
-      display: none;
-    }
+        .tab-content {
+            display: none;
+        }
 
-    .tab-content.active {
-      display: block;
-    }
+        .tab-content.active {
+            display: block;
+        }
 
-    textarea {
-      resize: vertical;
-      overflow: auto;
-    }
-  </style>
+        textarea {
+            resize: vertical;
+            overflow: auto;
+        }
+    </style>
 </head>
 
 <body>
 <script>
-  function showTab(tabId) {
-    // Hide all tab contents
-    const tabContents = document.querySelectorAll('.tab-content');
-    tabContents.forEach(content => content.classList.remove('active'));
+    function showTab(tabId) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
 
-    // Show the selected tab content
-    const selectedTab = document.getElementById(tabId);
-    selectedTab.classList.add('active');
+        // Show the selected tab content
+        const selectedTab = document.getElementById(tabId);
+        selectedTab.classList.add('active');
 
-    // Update active tab indicator
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(tab => tab.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+        // Update active tab indicator
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        event.currentTarget.classList.add('active');
 
-    const section0 = document.getElementById("section0");
+        const section0 = document.getElementById("section0");
 
-    section0.style.maxHeight = section0.scrollHeight + "px";
+        section0.style.maxHeight = section0.scrollHeight + "px";
 
-  }
+    }
 </script>
-  <div class="accordion">
+<div class="accordion">
     <div class="section">
-      <div class="header" onclick="toggleSection(0)">Connection</div>
-      <div class="content" id="section0">
-        <div class="tabs-container">
-          <div class="tab active" onclick="showTab('tab1')">odoo.sh</div>
-          <div class="tab" onclick="showTab('tab2')">standalone</div>
-        </div>
-        <div class="tabs-content">
-          <div id="tab1" class="tab-content active">
-            <form id="odooConnectForm" onsubmit="submitOdooConnectForm(event)">
-              <label for="odooDatabaseInput">Database Name:</label><br/>
-              <input type="text" id="odooDatabaseInput" name="database" value="" class="full-width-input">
-              <br/>
-              <label for="odooUserInput">Odoo User:</label><br/>
-              <input type="text" id="odooUserInput" name="user" value="admin" class="full-width-input">
-              <br/>
-              <label for="odooPasswordInput">Odoo Password:</label><br/>
-              <input type="password" id="odooPasswordInput" name="password" value="admin" class="full-width-input">
-              <br/>
-              <button type="submit">Connect</button>
-            </form>
-          </div>
+        <div class="header" onclick="toggleSection(0)">Connection</div>
+        <div class="content" id="section0">
+            <div class="tabs-container">
+                <div class="tab active" onclick="showTab('tab1')">odoo.sh</div>
+                <div class="tab" onclick="showTab('tab2')">standalone</div>
+            </div>
+            <div class="tabs-content">
+                <div id="tab1" class="tab-content active">
+                    <form id="odooConnectForm" onsubmit="submitOdooConnectForm(event)">
+                        <label for="odooDatabaseInput">Database Name:</label><br/>
+                        <input type="text" id="odooDatabaseInput" name="database" value="" class="full-width-input">
+                        <br/>
+                        <label for="odooUserInput">Odoo User:</label><br/>
+                        <input type="text" id="odooUserInput" name="user" value="admin" class="full-width-input">
+                        <br/>
+                        <label for="odooPasswordInput">Odoo Password:</label><br/>
+                        <input type="password" id="odooPasswordInput" name="password" value="admin"
+                               class="full-width-input">
+                        <br/>
+                        <button type="submit">Connect</button>
+                    </form>
+                </div>
 
-          <div id="tab2" class="tab-content">
-              <form id="standaloneConnectForm" onsubmit="submitStandaloneConnectForm(event)">
-                  <label for="urlInput">Data Access API URL:</label><br/>
-                  <input type="text" id="urlInput" name="url" value="https://daa-git-add-table-count-romkes-projects.vercel.app" class="full-width-input">
-                  <br/>
-                  <label for="hostInput">Database Host:</label><br/>
-                  <input type="text" id="hostInput" name="host" value="database-3.camz002p5mgc.us-east-1.rds.amazonaws.com" class="full-width-input">
-                  <br/>
-                  <label for="portInput">Database Port:</label><br/>
-                  <input type="text" id="portInput" name="port" value="5432" class="full-width-input">
-                  <br/>
-                  <label for="databaseInput">Database Name:</label><br/>
-                  <input type="text" id="databaseInput" name="database" value="testdb10" class="full-width-input">
-                  <br/>
-                  <label for="userInput">Database User:</label><br/>
-                  <input type="text" id="userInput" name="user" value="odoo" class="full-width-input">
-                  <br/>
-                  <label for="passwordInput">Database Password:</label><br/>
-                  <input type="password" id="passwordInput" name="password" value="odoo1234" class="full-width-input">
-                  <br/>
-                  <button type="submit">Connect</button>
-              </form>
-          </div>
+                <div id="tab2" class="tab-content">
+                    <form id="standaloneConnectForm" onsubmit="submitStandaloneConnectForm(event)">
+                        <label for="urlInput">Data Access API URL:</label><br/>
+                        <input type="text" id="urlInput" name="url"
+                               value="https://daa-git-add-table-count-romkes-projects.vercel.app"
+                               class="full-width-input">
+                        <br/>
+                        <label for="hostInput">Database Host:</label><br/>
+                        <input type="text" id="hostInput" name="host"
+                               value="database-3.camz002p5mgc.us-east-1.rds.amazonaws.com" class="full-width-input">
+                        <br/>
+                        <label for="portInput">Database Port:</label><br/>
+                        <input type="text" id="portInput" name="port" value="5432" class="full-width-input">
+                        <br/>
+                        <label for="databaseInput">Database Name:</label><br/>
+                        <input type="text" id="databaseInput" name="database" value="testdb10" class="full-width-input">
+                        <br/>
+                        <label for="userInput">Database User:</label><br/>
+                        <input type="text" id="userInput" name="user" value="odoo" class="full-width-input">
+                        <br/>
+                        <label for="passwordInput">Database Password:</label><br/>
+                        <input type="password" id="passwordInput" name="password" value="odoo1234"
+                               class="full-width-input">
+                        <br/>
+                        <button type="submit">Connect</button>
+                    </form>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 
     <div class="section">
-      <div class="header" onclick="toggleSection(1)">Tables</div>
-      <div class="content" id="section1">
-        <label for="filterInput">Filter Tables:</label>
-        <input type="text" id="filterInput" placeholder="Filter list"/><br/>
-        <input type="checkbox" id="includeEmpty"/>
-        <label for="includeEmpty">Include Empty</label>
+        <div class="header" onclick="toggleSection(1)">Tables</div>
+        <div class="content" id="section1">
+            <label for="filterInput">Filter Tables:</label>
+            <input type="text" id="filterInput" placeholder="Filter list"/><br/>
+            <input type="checkbox" id="includeEmpty"/>
+            <label for="includeEmpty">Include Empty</label>
 
-        <!-- Show tables -->
-        <div class="scrollable-div">
-          <ul id="table-list"></ul>
+            <!-- Show tables -->
+            <div class="scrollable-div">
+                <ul id="table-list"></ul>
+            </div>
         </div>
-      </div>
     </div>
 
     <div class="section">
-      <div class="header" onclick="toggleSection(2)">Mapping</div>
-      <div class="content" id="section2">
-        <!-- Show Headers -->
-        <div class="scrollable-div">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th class="tooltip">P<span class="tooltiptext">Primary Key</span></th>
-                <th class="tooltip">U<span class="tooltiptext">Unique</span></th>
-                <th class="tooltip">F<span class="tooltiptext">Foreign Key</span></th>
-                <th class="tooltip">I<span class="tooltiptext">In Use</span></th>
-                <th class="tooltip">C<span class="tooltiptext">Custom</span></th>
-              </tr>
-            </thead>
-            <tbody id="headers-tbody">
-            </tbody>
-          </table>
+        <div class="header" onclick="toggleSection(2)">Mapping</div>
+        <div class="content" id="section2">
+            <!-- Show Headers -->
+            <div class="scrollable-div">
+                <table>
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th class="tooltip">P<span class="tooltiptext">Primary Key</span></th>
+                        <th class="tooltip">U<span class="tooltiptext">Unique</span></th>
+                        <th class="tooltip">F<span class="tooltiptext">Foreign Key</span></th>
+                        <th class="tooltip">I<span class="tooltiptext">In Use</span></th>
+                        <th class="tooltip">C<span class="tooltiptext">Custom</span></th>
+                    </tr>
+                    </thead>
+                    <tbody id="headers-tbody">
+                    </tbody>
+                </table>
+            </div>
+            <button id="defaultHeadersButton" class="small-button" onclick="callDefaultHeaders()">Default</button>
+            <button id="applyHeadersButton" class="small-button" onclick="callApplyHeaders()">Apply</button>
         </div>
-        <button id="defaultHeadersButton" class="small-button" onclick="callDefaultHeaders()">Default</button>
-        <button id="applyHeadersButton" class="small-button" onclick="callApplyHeaders()">Apply</button>
-      </div>
     </div>
 
     <div class="section">
-      <div class="header" onclick="toggleSection(3)">Filter</div>
-      <div class="content" id="section3">
-        <!-- Filter conditions -->
-        <input type="checkbox" id="whereClauseCheckbox" checked><label for="whereClauseCheckbox">Enable Filter</label><br/><br/>
-        <label for="whereClauseInput">Where Clause:</label><br/>
-        <textarea id="whereClauseInput" class="full-width-input"></textarea><br/>
-        <div id="testWhereClauseResult"><br/>
+        <div class="header" onclick="toggleSection(3)">Filter</div>
+        <div class="content" id="section3">
+            <!-- Filter conditions -->
+            <input type="checkbox" id="whereClauseCheckbox" checked><label for="whereClauseCheckbox">Enable
+            Filter</label><br/><br/>
+            <label for="whereClauseInput">Where Clause:</label><br/>
+            <textarea id="whereClauseInput" class="full-width-input"></textarea><br/>
+            <div id="testWhereClauseResult"><br/>
+            </div>
+            <button id="testWhereClauseButton" class="small-button" onclick="callGetRowCount()">Test</button>
+            <button id="applyWhereClauseButton" class="small-button" onclick="applyWhereClause()">Apply</button>
         </div>
-        <button id="testWhereClauseButton" class="small-button" onclick="callGetRowCount()">Test</button>
-        <button id="applyWhereClauseButton" class="small-button" onclick="applyWhereClause()">Apply</button>
-      </div>
     </div>
-  </div>
+</div>
 
-    <div class="section">
-      <div class="header" onclick="toggleSection(4)">Actions</div>
-      <div class="content" id="section4">
+<div class="section">
+    <div class="header" onclick="toggleSection(4)">Actions</div>
+    <div class="content" id="section4">
         <!-- Extract table contents -->
-        <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button><br/>
+        <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button>
+        <br/>
         <!-- Load/Post table contents -->
         <input type="checkbox" id="insertCheckbox" checked><label for="insertCheckbox">Insert</label><br/>
         <input type="checkbox" id="updateCheckbox" checked><label for="updateCheckbox">Update</label><br/>
@@ -333,116 +341,116 @@
         <button id="viewResultButton" class="small-button" onclick="callViewResult()">View Result</button>
         <button id="hideResultButton" class="small-button" onclick="callHideResult()">Hide Result</button>
     </div>
-  </div>
+</div>
 
-  <div id="error-section" class="section" style="display: none">
+<div id="error-section" class="section" style="display: none">
     <div id="error-header" class="error-header header" onclick="toggleErrorSection()">Error</div>
     <div id="error-content" class="error-content">
-      <div id="error-message" class="error-message">
-      </div>
-      <button id="stackTraceButton" onclick="copyStackTrace()" style="display: none;">Copy Stack Trace</button>
-      <div id="error-stacktrace" class="error-stacktrace" style="display: none;">
-      </div>
+        <div id="error-message" class="error-message">
+        </div>
+        <button id="stackTraceButton" onclick="copyStackTrace()" style="display: none;">Copy Stack Trace</button>
+        <div id="error-stacktrace" class="error-stacktrace" style="display: none;">
+        </div>
     </div>
-  </div>
+</div>
 
-  <script>
+<script>
     // accordion scripts
     function toggleSection(sectionNumber) {
-      const sections = document.getElementsByClassName("content");
-      for (var i = 0; i < sections.length; i++) {
-        // open if it's the right section and it's currently closed, close otherwise
-        const open = (i === sectionNumber) && !sections[i].style.maxHeight
-        sections[i].style.maxHeight = open ? sections[i].scrollHeight + "px" : null
-        if(open) {
-          onSectionOpen(i)
+        const sections = document.getElementsByClassName("content");
+        for (var i = 0; i < sections.length; i++) {
+            // open if it's the right section and it's currently closed, close otherwise
+            const open = (i === sectionNumber) && !sections[i].style.maxHeight
+            sections[i].style.maxHeight = open ? sections[i].scrollHeight + "px" : null
+            if (open) {
+                onSectionOpen(i)
+            }
         }
-      }
     }
 
     function toggleErrorSection() {
-      const section = document.getElementById("error-content");
-      // open if it's currently closed, close otherwise
-      const open = !section.style.maxHeight
-      section.style.maxHeight = open ? section.scrollHeight + "px" : null
+        const section = document.getElementById("error-content");
+        // open if it's currently closed, close otherwise
+        const open = !section.style.maxHeight
+        section.style.maxHeight = open ? section.scrollHeight + "px" : null
     }
 
     function onSectionOpen(i) {
-      if (i===0) {
-        fillOdooConnectParameters()
-      } else if (i===1) {
-        callUpdateTables()
-      } else if (i===2) {
-        callRefreshHeaders()
-      } else if (i==3) {
-        fillWhereClauseParameters()
-      }
+        if (i === 0) {
+            fillOdooConnectParameters()
+        } else if (i === 1) {
+            callUpdateTables()
+        } else if (i === 2) {
+            callRefreshHeaders()
+        } else if (i == 3) {
+            fillWhereClauseParameters()
+        }
     }
 
-  </script>
+</script>
 
-  <script>
+<script>
     // connect scripts
 
     function fillOdooConnectParameters() {
-      const db = localStorage.getItem("db");
-      const user = localStorage.getItem("user");
-      document.forms.odooConnectForm.odooDatabaseInput.value = db;
-      document.forms.odooConnectForm.odooUserInput.value = user;
+        const db = localStorage.getItem("db");
+        const user = localStorage.getItem("user");
+        document.forms.odooConnectForm.odooDatabaseInput.value = db;
+        document.forms.odooConnectForm.odooUserInput.value = user;
     }
 
     function submitOdooConnectForm(event) {
-      event.preventDefault();
-      localStorage.setItem("access_token", "");
-      const db = document.forms.odooConnectForm.odooDatabaseInput.value;
-      const user = document.forms.odooConnectForm.odooUserInput.value;
-      const password = document.forms.odooConnectForm.odooPasswordInput.value;
-      // interestingly, you can always connect to an odoo.sh instance using <db>.dev.odoo.com, even a production database
-      // this is nice, because we don't have to ask the user to enter the full URL
-      const url = 'https://' + db + '.dev.odoo.com/stimula/1.0'
-      localStorage.setItem("url", url);
-      console.log(url)
-      runWithLoader('doOdooConnect', onOdooConnectSuccess, url, db, user, password)
+        event.preventDefault();
+        localStorage.setItem("access_token", "");
+        const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+        const user = document.forms.odooConnectForm.odooUserInput.value;
+        const password = document.forms.odooConnectForm.odooPasswordInput.value;
+        // interestingly, you can always connect to an odoo.sh instance using <db>.dev.odoo.com, even a production database
+        // this is nice, because we don't have to ask the user to enter the full URL
+        const url = 'https://' + db + '.dev.odoo.com/stimula/1.0'
+        localStorage.setItem("url", url);
+        console.log(url)
+        runWithLoader('doOdooConnect', onOdooConnectSuccess, url, db, user, password)
     }
 
     function submitStandaloneConnectForm(event) {
-      event.preventDefault();
-      localStorage.setItem("access_token", "");
-      const url = document.forms.standaloneConnectForm.urlInput.value
-      localStorage.setItem("url", url);
-      runWithLoader('doStandaloneConnect', onSuccess, url, document.forms.standaloneConnectForm)
+        event.preventDefault();
+        localStorage.setItem("access_token", "");
+        const url = document.forms.standaloneConnectForm.urlInput.value
+        localStorage.setItem("url", url);
+        runWithLoader('doStandaloneConnect', onSuccess, url, document.forms.standaloneConnectForm)
     }
 
     function onOdooConnectSuccess(response) {
-      var token = response['token']
-      localStorage.setItem("access_token", token);
-      const db = document.forms.odooConnectForm.odooDatabaseInput.value;
-      const user = document.forms.odooConnectForm.odooUserInput.value;
-      localStorage.setItem("db", db);
-      localStorage.setItem("user", user);
-      toggleSection(1)
+        var token = response['token']
+        localStorage.setItem("access_token", token);
+        const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+        const user = document.forms.odooConnectForm.odooUserInput.value;
+        localStorage.setItem("db", db);
+        localStorage.setItem("user", user);
+        toggleSection(1)
     }
 
-  </script>
+</script>
 
-  <!-- Tables scripts -->
-  <script>
+<!-- Tables scripts -->
+<script>
     // get tables scripts
     const filterInputElement = document.getElementById('filterInput');
     const includeEmptyElement = document.getElementById('includeEmpty');
     let tableList = []
 
     function callUpdateTables() {
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      const filter = '.*'
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        const filter = '.*'
 
-      runWithLoader('getTables', storeTables, url, token, filter)
+        runWithLoader('getTables', storeTables, url, token, filter)
     }
 
     function storeTables(tables) {
-      tableList = tables
-      filterList()
+        tableList = tables
+        filterList()
     }
 
 
@@ -451,124 +459,124 @@
     includeEmptyElement.addEventListener('input', filterList);
 
     function filterList() {
-      // Get the filter and checkbox values
-      const filterValue = filterInputElement.value.toLowerCase();
-      const includeEmptyValue = includeEmptyElement.checked;
+        // Get the filter and checkbox values
+        const filterValue = filterInputElement.value.toLowerCase();
+        const includeEmptyValue = includeEmptyElement.checked;
 
 
-      // Filter the list items based on the input value and checkbox
-      const filteredItems = tableList.filter(item => {
-          return item.name.includes(filterValue) && (includeEmptyValue || item.count > 0);
-      });
+        // Filter the list items based on the input value and checkbox
+        const filteredItems = tableList.filter(item => {
+            return item.name.includes(filterValue) && (includeEmptyValue || item.count > 0);
+        });
 
-      // Update the displayed list
-      displayTables(filteredItems);
+        // Update the displayed list
+        displayTables(filteredItems);
     }
 
     // Function to update the list in the sidebar
     function displayTables(result) {
-      var ul = document.getElementById('table-list');
-      ul.innerHTML = ''; // Clear the list
+        var ul = document.getElementById('table-list');
+        ul.innerHTML = ''; // Clear the list
 
-      // Loop through the result and add items to the list
-      result.forEach(function(item){
-        var li = document.createElement('li');
-        li.textContent = `${item.name} (${item.count})`;
-        li.addEventListener('click', function() {
-          clickTableName(item.name);
-        });
-        ul.appendChild(li);
-      })
+        // Loop through the result and add items to the list
+        result.forEach(function (item) {
+            var li = document.createElement('li');
+            li.textContent = `${item.name} (${item.count})`;
+            li.addEventListener('click', function () {
+                clickTableName(item.name);
+            });
+            ul.appendChild(li);
+        })
     }
 
     function clickTableName(item) {
-      // Open or activate a tab for the selected table
-      runWithLoader('openTab', openTabSuccess, item)
+        // Open or activate a tab for the selected table
+        runWithLoader('openTab', openTabSuccess, item)
     }
 
     function openTabSuccess() {
-      toggleSection(2)
+        toggleSection(2)
     }
 
-  </script>
+</script>
 
-  <!-- Headers scripts -->
-  <script>
+<!-- Headers scripts -->
+<script>
     function fillHeadersTable(headersAsJson) {
-      // Get the table body
-      var tbody = document.getElementById('headers-tbody');
-      tbody.innerHTML = ''
+        // Get the table body
+        var tbody = document.getElementById('headers-tbody');
+        tbody.innerHTML = ''
 
-      // Loop through the JSON data and create rows
-      headersAsJson.columns.forEach(function (row) {
-          var tr = document.createElement('tr');
-          tr.draggable = 'true'
-          tr.ondragstart = dragstart
-          tr.ondragover = dragover
+        // Loop through the JSON data and create rows
+        headersAsJson.columns.forEach(function (row) {
+            var tr = document.createElement('tr');
+            tr.draggable = 'true'
+            tr.ondragstart = dragstart
+            tr.ondragover = dragover
 
-          var td = document.createElement('td');
-          td.textContent = '=';
-          td.classList.add('scroll')
-          tr.appendChild(td);
+            var td = document.createElement('td');
+            td.textContent = '=';
+            td.classList.add('scroll')
+            tr.appendChild(td);
 
-          tr.appendChild(createCheckbox(row['enabled'], false));
+            tr.appendChild(createCheckbox(row['enabled'], false));
 
-          td = document.createElement('td');
-          td.textContent = row.key;
-          tr.appendChild(td);
+            td = document.createElement('td');
+            td.textContent = row.key;
+            tr.appendChild(td);
 
-          tr.appendChild(createCheckbox(row['primary-key'], true));
-          tr.appendChild(createCheckbox(row['unique'], true));
-          tr.appendChild(createCheckbox(row['foreign-key'], true));
-          tr.appendChild(createCheckbox(row['in-use'], true));
-          tr.appendChild(createCheckbox(row['custom'], true));
+            tr.appendChild(createCheckbox(row['primary-key'], true));
+            tr.appendChild(createCheckbox(row['unique'], true));
+            tr.appendChild(createCheckbox(row['foreign-key'], true));
+            tr.appendChild(createCheckbox(row['in-use'], true));
+            tr.appendChild(createCheckbox(row['custom'], true));
 
-          // Append the row to the table body
-          tbody.appendChild(tr);
-      });
+            // Append the row to the table body
+            tbody.appendChild(tr);
+        });
     }
 
     function createCheckbox(checked, disabled) {
-      var td = document.createElement('td');
-      var input = document.createElement('input')
-      input.type = 'checkbox'
-      if (disabled)
-        input.disabled = 'true'
-      if (checked)
-        input.checked = 'checked'
-      td.appendChild(input);
-      return td
+        var td = document.createElement('td');
+        var input = document.createElement('input')
+        input.type = 'checkbox'
+        if (disabled)
+            input.disabled = 'true'
+        if (checked)
+            input.checked = 'checked'
+        td.appendChild(input);
+        return td
     }
 
     function callDefaultHeaders() {
-      // fill the headers table with default headers, ignoring the current header line
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      runWithLoader('getDefaultHeaders', fillHeadersTable, url, token)
+        // fill the headers table with default headers, ignoring the current header line
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        runWithLoader('getDefaultHeaders', fillHeadersTable, url, token)
     }
 
     function callRefreshHeaders() {
-      // fill the headers table with default headers, merged with the current header line
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      runWithLoader('getHeaders', fillHeadersTable, url, token)
+        // fill the headers table with default headers, merged with the current header line
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        runWithLoader('getHeaders', fillHeadersTable, url, token)
     }
 
     function callApplyHeaders() {
-      headers = []
-      // get table body
-      var tbody = document.getElementById('headers-tbody');
-      for (var row of tbody.rows) {
-        const key = row.cells[2].textContent
-        const enabled = row.cells[1].children[0].checked
-        headers.push({key, enabled})
+        headers = []
+        // get table body
+        var tbody = document.getElementById('headers-tbody');
+        for (var row of tbody.rows) {
+            const key = row.cells[2].textContent
+            const enabled = row.cells[1].children[0].checked
+            headers.push({key, enabled})
 
-      }
-      runWithLoader('applyHeaders', applyHeadersSuccess, headers)
+        }
+        runWithLoader('applyHeaders', applyHeadersSuccess, headers)
     }
 
     function applyHeadersSuccess() {
-      toggleSection(3)
+        toggleSection(3)
     }
 
     var row;
@@ -587,80 +595,80 @@
         else
             e.target.parentNode.before(row);
     }
-  </script>
+</script>
 
 
-  <!-- Where clause scripts -->
-  <script>
+<!-- Where clause scripts -->
+<script>
 
     function fillWhereClauseParameters() {
-      // clear record count message
-      document.getElementById('testWhereClauseResult').innerHTML = '';
-      const whereClauseCheckbox = localStorage.getItem("whereClauseCheckbox");
-      const whereClause = localStorage.getItem("whereClause");
-      document.getElementById('whereClauseCheckbox').checked = whereClauseCheckbox === 'true';
-      document.getElementById('whereClauseInput').value = whereClause;
+        // clear record count message
+        document.getElementById('testWhereClauseResult').innerHTML = '';
+        const whereClauseCheckbox = localStorage.getItem("whereClauseCheckbox");
+        const whereClause = localStorage.getItem("whereClause");
+        document.getElementById('whereClauseCheckbox').checked = whereClauseCheckbox === 'true';
+        document.getElementById('whereClauseInput').value = whereClause;
     }
 
     function callGetRowCount() {
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      const whereClause = document.getElementById('whereClauseInput').value;
-      // call backend to test the where clause for errors and to display the number of matching records
-      runWithLoader('getRowCount', displayRowCountResult, url, token, whereClause)
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        const whereClause = document.getElementById('whereClauseInput').value;
+        // call backend to test the where clause for errors and to display the number of matching records
+        runWithLoader('getRowCount', displayRowCountResult, url, token, whereClause)
     }
 
     function displayRowCountResult(recordCount) {
-      // display recordCount in testWhereClauseResult
+        // display recordCount in testWhereClauseResult
         const testWhereClauseResult = document.getElementById('testWhereClauseResult');
         testWhereClauseResult.innerHTML = 'Number of matching records: ' + recordCount;
     }
 
     function applyWhereClause() {
-      // get where clause checkbox and clause
-      const whereClauseCheckbox = document.getElementById('whereClauseCheckbox');
-      const whereClause = document.getElementById('whereClauseInput').value;
-      // store in local storage
-      localStorage.setItem("whereClauseCheckbox", whereClauseCheckbox.checked);
-      localStorage.setItem("whereClause", whereClause);
-      // open next section
-      toggleSection(4)
+        // get where clause checkbox and clause
+        const whereClauseCheckbox = document.getElementById('whereClauseCheckbox');
+        const whereClause = document.getElementById('whereClauseInput').value;
+        // store in local storage
+        localStorage.setItem("whereClauseCheckbox", whereClauseCheckbox.checked);
+        localStorage.setItem("whereClause", whereClause);
+        // open next section
+        toggleSection(4)
     }
-  </script>
+</script>
 
-  <!-- Actions scripts -->
-  <script>
+<!-- Actions scripts -->
+<script>
 
     function callExtractTable() {
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      // check if where clause filter is enabled
-      const whereClauseCheckbox = document.getElementById('whereClauseCheckbox').checked;
-      // if enabled, get where clause
-      const whereClause = whereClauseCheckbox ? document.getElementById('whereClauseInput').value : null;
-      //   read the selected table name
-      runWithLoader('getTable', null, url, token, whereClause)
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        // check if where clause filter is enabled
+        const whereClauseCheckbox = document.getElementById('whereClauseCheckbox').checked;
+        // if enabled, get where clause
+        const whereClause = whereClauseCheckbox ? document.getElementById('whereClauseInput').value : null;
+        //   read the selected table name
+        runWithLoader('getTable', null, url, token, whereClause)
     }
 
     function callPostTable() {
-      const url = localStorage.getItem("url");
-      const token = localStorage.getItem("access_token");
-      const isInsert = document.getElementById('insertCheckbox').checked;
-      const isUpdate = document.getElementById('updateCheckbox').checked;
-      const isDelete = document.getElementById('deleteCheckbox').checked;
-      const isExecute = document.getElementById('executeCheckbox').checked;
-      const isCommit = document.getElementById('commitCheckbox').checked;
-      const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
-      const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
-      const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
-      runWithLoader('postTable', onPostTableResult, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        const isInsert = document.getElementById('insertCheckbox').checked;
+        const isUpdate = document.getElementById('updateCheckbox').checked;
+        const isDelete = document.getElementById('deleteCheckbox').checked;
+        const isExecute = document.getElementById('executeCheckbox').checked;
+        const isCommit = document.getElementById('commitCheckbox').checked;
+        const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
+        const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
+        const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
+        runWithLoader('postTable', onPostTableResult, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
     }
 
     function onPostTableResult(summary) {
-      //   log summary
+        //   log summary
         console.log('summary: ' + summary);
 
-      //   display summary in summary-message div
+        //   display summary in summary-message div
         const summaryMessage = document.getElementById('summary-message');
 
         // convert summary to json string
@@ -670,24 +678,24 @@
     }
 
     function callViewResult() {
-      runWithLoader('viewResult')
+        runWithLoader('viewResult')
     }
 
     function callHideResult() {
-      runWithLoader('hideResult')
+        runWithLoader('hideResult')
     }
 
     function runWithLoader(funcToCall, callback) {
-      // Show loading cursor
-      showLoadingSpinner()
+        // Show loading cursor
+        showLoadingSpinner()
 
-      // clear error
-      clearError()
+        // clear error
+        clearError()
 
-      // Get the additional arguments starting from the second one
-      var additionalArgs = Array.prototype.slice.call(arguments, 2);
+        // Get the additional arguments starting from the second one
+        var additionalArgs = Array.prototype.slice.call(arguments, 2);
 
-      // check if we're running in a local browser
+        // check if we're running in a local browser
         if (typeof google !== 'undefined') {
             // Call the specified function using google.script.run
             google.script.run.withSuccessHandler(function (result) {
@@ -715,88 +723,88 @@
 
     function showLoadingSpinner() {
         // Set the cursor style for specific elements, e.g., buttons and labels
-        document.querySelectorAll('div, button, label, li').forEach(function(element) {
+        document.querySelectorAll('div, button, label, li').forEach(function (element) {
             element.style.cursor = 'wait';
         });
     }
 
     function hideLoadingSpinner() {
         // Reset the cursor style for specific elements
-        document.querySelectorAll('div, button, label, li').forEach(function(element) {
+        document.querySelectorAll('div, button, label, li').forEach(function (element) {
             element.style.cursor = 'default';
         });
     }
-  </script>
+</script>
 
-  <script>
+<script>
     function clearError() {
-      const errorSection = document.getElementById('error-section' )
-      // hide
-      errorSection.style.display = "none";
-      // close
-      const content = document.getElementById("error-content");
-      content.style.maxHeight = null
-      // clear
-      document.getElementById('error-header' ).innerHTML = ''
-      document.getElementById('error-message' ).innerHTML = ''
-      document.getElementById('error-stacktrace' ).innerHTML = ''
-      // hide copy stack trace button
-      const stackTraceButton = document.getElementById("stackTraceButton");
-      stackTraceButton.style.display = "none";
+        const errorSection = document.getElementById('error-section')
+        // hide
+        errorSection.style.display = "none";
+        // close
+        const content = document.getElementById("error-content");
+        content.style.maxHeight = null
+        // clear
+        document.getElementById('error-header').innerHTML = ''
+        document.getElementById('error-message').innerHTML = ''
+        document.getElementById('error-stacktrace').innerHTML = ''
+        // hide copy stack trace button
+        const stackTraceButton = document.getElementById("stackTraceButton");
+        stackTraceButton.style.display = "none";
 
     }
 
     function displayError(e) {
 
-      // display error
-      const errorSection = document.getElementById('error-section' )
-      errorSection.style.display = "block";
-      const MAX_LENGTH = 40
-      try {
-        // for API errors
-        const error = JSON.parse(e.message);
-        document.getElementById('error-header' ).innerHTML = shortenString(error.type + ': ' + error.short, MAX_LENGTH)
-        document.getElementById('error-message' ).innerHTML = error.msg
-        document.getElementById('error-stacktrace' ).innerHTML = error.trace
-        const stackTraceButton = document.getElementById("stackTraceButton");
-        stackTraceButton.style.display = "block";
-      } catch (err) {
-        // for other errors
-        document.getElementById('error-header' ).innerHTML = shortenString(e.message, MAX_LENGTH)
-        document.getElementById('error-message' ).innerHTML = e.message
-        if (e.stack) {
-          document.getElementById('error-stacktrace' ).innerHTML = e.toString() + '\n' + e.stack
-          const stackTraceButton = document.getElementById("stackTraceButton");
-          stackTraceButton.style.display = "block";
+        // display error
+        const errorSection = document.getElementById('error-section')
+        errorSection.style.display = "block";
+        const MAX_LENGTH = 40
+        try {
+            // for API errors
+            const error = JSON.parse(e.message);
+            document.getElementById('error-header').innerHTML = shortenString(error.type + ': ' + error.short, MAX_LENGTH)
+            document.getElementById('error-message').innerHTML = error.msg
+            document.getElementById('error-stacktrace').innerHTML = error.trace
+            const stackTraceButton = document.getElementById("stackTraceButton");
+            stackTraceButton.style.display = "block";
+        } catch (err) {
+            // for other errors
+            document.getElementById('error-header').innerHTML = shortenString(e.message, MAX_LENGTH)
+            document.getElementById('error-message').innerHTML = e.message
+            if (e.stack) {
+                document.getElementById('error-stacktrace').innerHTML = e.toString() + '\n' + e.stack
+                const stackTraceButton = document.getElementById("stackTraceButton");
+                stackTraceButton.style.display = "block";
+            }
         }
-      }
     }
 
     function shortenString(inputString, maxLength) {
-      if (inputString.length <= maxLength) {
-        return inputString;
-      } else {
-        return inputString.substring(0, maxLength - 3) + '...';
-      }
+        if (inputString.length <= maxLength) {
+            return inputString;
+        } else {
+            return inputString.substring(0, maxLength - 3) + '...';
+        }
     }
 
     function copyStackTrace() {
-      var traceContent = document.getElementById('error-stacktrace').textContent;
+        var traceContent = document.getElementById('error-stacktrace').textContent;
 
-      // Use the Clipboard API to copy the content to the clipboard
-      navigator.clipboard.writeText(traceContent).then(function() {
-        console.log('Stack trace copied');
-      }).catch(function(err) {
-        console.error('Unable to copy stack trace to clipboard:', err);
-      });
+        // Use the Clipboard API to copy the content to the clipboard
+        navigator.clipboard.writeText(traceContent).then(function () {
+            console.log('Stack trace copied');
+        }).catch(function (err) {
+            console.error('Unable to copy stack trace to clipboard:', err);
+        });
     }
 
-  </script>
+</script>
 
-  <script>
+<script>
     // Now that all functions are available, open the first section on page load
     toggleSection(0)
-  </script>
+</script>
 
 </body>
 
