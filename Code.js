@@ -219,7 +219,8 @@ function _getCurrentHeader() {
 
 function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
     // get active sheet name, we'll post it as context
-    const sheetName = SpreadsheetApp.getActiveSheet().getName()
+    const sheet = SpreadsheetApp.getActiveSheet()
+    const sheetName = sheet.getName()
     // get table name from active sheet
     const tableName = _getActiveTableName(baseUrl, token)
     const header = _getCurrentHeader(tableName)
@@ -233,7 +234,7 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
         + (header ? '&h=' + header : '')
         + (whereClause ? '&q=' + whereClause : '')
         + '&context=' + sheetName
-    const csv = _getActiveSheetAsCsv()
+    const csv = _getSheetAsCsv(sheet)
     const options = {
         "method": "post",
         "contentType": "text/csv",
@@ -259,8 +260,86 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
     return result['summary']
 }
 
-function _getActiveSheetAsCsv() {
-    const sheet = SpreadsheetApp.getActiveSheet();
+function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
+    // comma separate sheet names
+    const tables = sheetNames.join(',')
+
+    // log sheet names
+    Logger.log('Exporting sheets: ' + tables)
+
+    const url = baseUrl + '/tables?style=full&t=' + tables
+        + (isInsert ? '&insert=true' : '')
+        + (isUpdate ? '&update=true' : '')
+        + (isDelete ? '&delete=true' : '')
+        + (isExecute ? '&execute=true' : '')
+        + (isCommit ? '&commit=true' : '')
+    // convert sheets to csv files
+    const files = exportSheets(sheetNames)
+    // create multipart request
+    const multipartData = createMultipartBody(files);
+    const options = {
+        method: 'POST',
+        contentType: `multipart/form-data; boundary=${multipartData.boundary}`,
+        payload: multipartData.body,
+        muteHttpExceptions: true
+    };
+
+
+    // clear formatting
+    _clearMultiPostResult(sheetNames)
+
+    response = _makeHttpRequest(url, options, token)
+
+    // parse response
+    result = JSON.parse(response)
+
+    // display line-by-line feedback in sheets
+    _displayMultiPostFullReport(result['rows'], sheetNames, isExecute)
+
+    // return summary for the front-end to display
+    return result['summary']
+}
+
+function exportSheets(sheets) {
+
+    // Prepare the files to be sent
+    const files = sheets.map(sheetName => {
+        // log sheet name
+        Logger.log('Exporting sheet: ' + sheetName)
+        // get sheet by name
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+        const content = _getSheetAsCsv(sheet);
+        return {
+            name: `${sheetName}.csv`,
+            mimeType: 'text/csv',
+            content: content
+        };
+    });
+
+    return files
+}
+
+function createMultipartBody(files) {
+    const boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
+    let body = "";
+
+    files.forEach((file, index) => {
+        body += `--${boundary}\r\n`;
+        body += `Content-Disposition: form-data; name="file${index}"; filename="${file.name}"\r\n`;
+        body += `Content-Type: ${file.mimeType}\r\n\r\n`;
+        body += file.content + "\r\n";
+    });
+
+    body += `--${boundary}--\r\n`;
+
+    return {
+        boundary: boundary,
+        body: body
+    };
+}
+
+
+function _getSheetAsCsv(sheet) {
     const dataRange = sheet.getDataRange().getValues();
 
     var csv = '';
@@ -307,6 +386,12 @@ function _displayPostResult(content) {
     sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
 }
 
+function _clearMultiPostResult(sheetNames) {
+    sheetNames.forEach(sheetName => {
+        _clearPostResult(sheetName)
+    })
+}
+
 function _clearPostResult(context) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
     var sheet = spreadsheet.getSheetByName(context);
@@ -319,6 +404,26 @@ function _clearPostResult(context) {
         // clear notes of first column
         sheet.getRange(1, 1, sheet.getLastRow(), 1).clearNote()
     }
+
+}
+
+function _displayMultiPostFullReport(rows, sheetNames, isExecute) {
+    //     iterate over sheets
+    //     iterate rows and log context attribute
+    rows.forEach(row => {
+        Logger.log('Context: ' + row.context)
+    })
+
+    sheetNames.forEach(sheetName => {
+        // log sheetname
+        Logger.log('Displaying sheet: ' + sheetName)
+        // filter rows for this sheet
+        const sheetRows = rows.filter(row => row.context == (sheetName + '.csv'))
+        // logger row count
+        Logger.log('Rows: ' + sheetRows.length)
+        // display rows
+        _displayPostFullReport(sheetRows, sheetName, isExecute)
+    })
 
 }
 
@@ -342,6 +447,12 @@ function _displayPostFullReport(rows, context, isExecute) {
 
         // log line and success
         Logger.log('Line: ' + lineNumber + ', Success: ' + success)
+
+        // if line is NaN, skip
+        // TODO, figure out how to display deletes
+        if (isNaN(lineNumber)) {
+            continue
+        }
         // get line number
         // select full row
         const range = sheet.getRange(lineNumber + 2, 1, 1, sheet.getLastColumn())
@@ -456,4 +567,13 @@ function _makeHttpRequest(url, options, token = null) {
     return response;
 }
 
+
+function getSheetsList() {
+    // return list with all visible sheet names
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
+    // get unhidden sheets
+    const sheets = spreadsheet.getSheets().filter(sheet => !sheet.isSheetHidden())
+    // return list of sheet names
+    return sheets.map(sheet => sheet.getName())
+}
 

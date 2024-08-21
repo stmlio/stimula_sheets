@@ -343,6 +343,27 @@
     </div>
 </div>
 
+<div class="section">
+    <div class="header" onclick="toggleSection(5)">Multiple Post</div>
+    <div class="content" id="section5">
+        <!-- Show Headers -->
+        <div class="scrollable-div">
+            <table>
+                <thead>
+                <tr>
+                    <th><input type="checkbox" onclick="selectAllSheets(this)"/></th>
+                    <th>File</th>
+                </tr>
+                </thead>
+                <tbody id="sheets-tbody">
+                </tbody>
+            </table>
+        </div>
+        <!-- Load/Post table contents -->
+        <button id="postMultiTableButton" onclick="callPostMultiTable()">Post Multiple Tables</button>
+    </div>
+</div>
+
 <div id="error-section" class="section" style="display: none">
     <div id="error-header" class="error-header header" onclick="toggleErrorSection()">Error</div>
     <div id="error-content" class="error-content">
@@ -384,6 +405,8 @@
             callRefreshHeaders()
         } else if (i == 3) {
             fillWhereClauseParameters()
+        } else if (i == 5) {
+            callListSheets()
         }
     }
 
@@ -736,6 +759,81 @@
     }
 </script>
 
+<!-- Multi Post scripts -->
+<script>
+    function selectAllSheets(checkbox) {
+        var tbody = document.getElementById('sheets-tbody');
+        for (var row of tbody.rows) {
+            row.cells[0].children[0].checked = checkbox.checked
+        }
+    }
+
+    function callListSheets() {
+        // fill the headers table with default headers, merged with the current header line
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        runWithLoader('getSheetsList', fillSheetsList, url, token)
+    }
+
+    function fillSheetsList(sheets) {
+        // Get the table body
+        var tbody = document.getElementById('sheets-tbody');
+        tbody.innerHTML = ''
+
+        // Loop through the JSON data and create rows
+        sheets.forEach(function (row) {
+            var tr = document.createElement('tr');
+
+            tr.appendChild(createCheckbox());
+
+            td = document.createElement('td');
+            td.textContent = row;
+            tr.appendChild(td);
+
+            // Append the row to the table body
+            tbody.appendChild(tr);
+        });
+    }
+
+    function createCheckbox() {
+        var td = document.createElement('td');
+        var input = document.createElement('input')
+        input.type = 'checkbox'
+        td.appendChild(input);
+        return td
+    }
+
+    function callPostMultiTable() {
+        const sheets = getEnabledSheetslist()
+
+
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        const isInsert = document.getElementById('insertCheckbox').checked;
+        const isUpdate = document.getElementById('updateCheckbox').checked;
+        const isDelete = document.getElementById('deleteCheckbox').checked;
+        const isExecute = document.getElementById('executeCheckbox').checked;
+        const isCommit = document.getElementById('commitCheckbox').checked;
+        const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
+        const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
+        const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
+        runWithLoader('postMultiTable', onPostTableResult, url, token, sheets, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
+    }
+
+    function getEnabledSheetslist() {
+        const tbody = document.getElementById('sheets-tbody');
+        const sheets = []
+        for (var row of tbody.rows) {
+            if (row.cells[0].children[0].checked) {
+                sheets.push(row.cells[1].textContent)
+            }
+        }
+        return sheets
+    }
+
+</script>
+
+<!-- User feedback and error scripts -->
 <script>
     function clearError() {
         const errorSection = document.getElementById('error-section')
