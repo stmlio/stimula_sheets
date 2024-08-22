@@ -262,8 +262,8 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
     result = JSON.parse(response)
 
     // display line-by-line feedback in sheets
-    _displayPostFullReport(result['rows'], sheetName, isExecute)
-
+    _displayBackgroundColor(result['rows'], sheet, isExecute)
+    _displayNotes(result['rows'], sheet)
 
     // return summary for the front-end to display
     return result['summary']

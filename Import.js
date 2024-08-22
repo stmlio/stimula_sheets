@@ -282,72 +282,57 @@ function _displayMultiPostFullReport(rows, sheets, isExecute) {
         const sheetRows = rows.filter(row => row.context == (sheet.getName() + '.csv'))
         // logger row count
         Logger.log('Rows: ' + sheetRows.length)
-        // display rows
-        _displayPostFullReport(sheetRows, sheet, isExecute)
+        // display background color in rows
+        _displayBackgroundColor(sheetRows, sheet, isExecute)
+        // display notes in first column
+        _displayNotes(sheetRows, sheet)
+
     })
 
 }
 
-function _displayPostFullReport(rows, sheet, isExecute) {
-//   find and activate sheet based on context
-    if (!sheet) {
-        Logger.log('Sheet to display updates not found: ' + context)
-        return
+function _displayBackgroundColor(rows, sheet, isExecute) {
+
+    // get range of successful rows. Undefined also means success.
+    let successRange = rows.filter(row => row.success === undefined || row.success).map(r => r.line_number).filter(l => !isNaN(l)).map(l => parseInt(l) + 2).map(l => l + ':' + l)
+
+    // get range of failed rows
+    let failedRange = rows.filter(row => row.success !== undefined && !row.success).map(r => r.line_number).filter(l => !isNaN(l)).map(l => parseInt(l) + 2).map(l => l + ':' + l)
+
+    // set background color. For some odd reason a rangelist must not be empty.
+    if (successRange.length > 0) {
+        // bright green for execute, light green for evaluate
+        const color = isExecute ? '#44FF44' : '#AAFFAA'
+        sheet.getRangeList(successRange).setBackground(color)
     }
 
-    // iterate rows
-    for (var i = 0; i < rows.length; i++) {
-        const row = rows[i]
+    // red for failed
+    if (failedRange.length > 0) {
+        sheet.getRangeList(failedRange).setBackground('#FF4444')
+    }
+}
 
-        // convert from string to integer
+function _displayNotes(rows, sheet) {
 
+    // get single range for column A. We can't use a range list to set notes.
+    const range = sheet.getRange(2, 1, sheet.getLastRow() - 1, 1)
+
+    // create an empty array with the same length as range
+    const notesArray = Array.from({length: sheet.getLastRow() - 1}, (v, i) => '')
+
+    // iterate rows to set notes in array
+    rows.filter(row => !isNaN(row.line_number)).forEach(row => {
+        // parse line number to get 0-indexed line number
         const lineNumber = parseInt(row.line_number)
-        // undefined also means success
-        const success = row.success || row.success === undefined
 
-        // log line and success
-        Logger.log('Line: ' + lineNumber + ', Success: ' + success)
-
-        // if line is NaN, skip
-        // TODO, figure out how to display deletes
-        if (isNaN(lineNumber)) {
-            continue
-        }
-        // get line number
-        // select full row
-        const range = sheet.getRange(lineNumber + 2, 1, 1, sheet.getLastColumn())
-
-        // set background color based on success
-        if (success) {
-            if (isExecute) {
-                // bright green for execute
-                range.setBackground('#44FF44')
-            } else {
-                // light green for not execute
-                range.setBackground('#AAFFAA')
-            }
-        } else {
-            range.setBackground('#FF4444')
-        }
-
-        //   select first column of row
-        const cell = sheet.getRange(lineNumber + 2, 1)
-
-        // get error
-        const error = row.error
-        // get query and parameters
-        const query = row.query
-        const params = row.params
         // format error
-        errorMessage = error ? 'Error: ' + error + '\n\n' : ''
-        // add query
-        errorMessage += query + '\n\n'
-        // add parameters as json string
-        errorMessage += JSON.stringify(params, null, 2)
+        notesArray[lineNumber] = (row.error ? 'Error: ' + row.error + '\n\n' : '') + row.query + '\n\n' + JSON.stringify(row.params, null, 2)
+    })
 
-        // set error message as note
-        cell.setNote(errorMessage)
-    }
+    Logger.log(notesArray)
+
+    // set all notes in sheet at once
+    range.setNotes(notesArray.map(note => [note]))
 }
 
 
