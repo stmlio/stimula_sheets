@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en_US">
+
+<head>
+    <base target="_top">
+    <title>Data Access</title>
+    <style>
+        div,
+        button {
+            font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        label {
+            margin: 2px;
+        }
+
+        ul {
+            padding-left: 16px;
+            white-space: nowrap;
+        }
+
+        li {
+            cursor: pointer;
+        }
+
+        button {
+            background: #fff;
+            border-radius: 28px;
+            color: #1f1f1f;
+            border-color: transparent;
+            margin: 4px;
+            width: 242px;
+            padding: 4px 8px;
+        }
+
+        button:hover {
+            background-color: #ddd;
+        }
+
+        input {
+            margin: 4px 0;
+        }
+
+        .full-width-input {
+            box-sizing: border-box;
+            width: calc(100% - 5px);
+        }
+
+        .accordion {
+        }
+
+        .section {
+            border: 1px solid #f1f1f1;
+            border-radius: 20px;
+            background-color: #edf2fa;
+            margin-bottom: 8px;
+        }
+
+        .header {
+            color: #333;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 20px;
+        }
+
+        .header:hover {
+            background-color: #ddd;
+        }
+
+        .feedback-header {
+            overflow: hidden; /* Hide the overflowing text */
+            text-overflow: ellipsis; /* Show ellipsis (...) for the overflowing text */
+        }
+
+        .error-header {
+            color: red;
+        }
+
+        .content,
+        .feedback-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            padding-left: 8px;
+            /* padding-right: 8px; */
+        }
+
+        .feedback-content {
+            white-space: pre-line;
+        }
+
+        .scrollable-div {
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        .small-button {
+            width: 115px;
+        }
+
+        td,
+        tr,
+        th {
+            border: 1px solid white;
+            border-collapse: collapse;
+        }
+
+        /* Selector is used dynamically when creating header section */
+        /* noinspection CssUnusedSymbol */
+        .scroll {
+            cursor: all-scroll;
+        }
+
+        table {
+            border-collapse: collapse;
+            -webkit-user-select: none;
+            /* Safari */
+            -ms-user-select: none;
+            /* IE 10+ and Edge */
+            user-select: none;
+            /* Standard syntax */
+        }
+
+        .tooltip {
+            /* display: inline-block; */
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 2px;
+            position: absolute;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s;
+            left: -115px;
+            top: 10px;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tabs-container {
+            display: flex;
+            margin-right: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            cursor: pointer;
+            background-color: #bbb;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            /*margin-right: -1px;*/
+            position: relative;
+        }
+
+        .tab.active {
+            background-color: #edf2fa; /* Set the active tab color */
+            /*color: #fff;*/
+            z-index: 1;
+        }
+
+        .tabs-content {
+            /*margin: 20px;*/
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        textarea {
+            resize: vertical;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+<script>
+    function showTab(tabId) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // Show the selected tab content
+        const selectedTab = document.getElementById(tabId);
+        selectedTab.classList.add('active');
+
+        // Update active tab indicator
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+
+        const section0 = document.getElementById("section0");
+
+        section0.style.maxHeight = section0.scrollHeight + "px";
+
+    }
+</script>
+<div class="accordion">
+    <div class="section">
+        <div class="header" onclick="toggleSection(0)">Connection</div>
+        <div class="content" id="section0">
+            <div class="tabs-container">
+                <div class="tab active" onclick="showTab('tab1')">odoo.sh</div>
+                <div class="tab" onclick="showTab('tab2')">standalone</div>
+            </div>
+            <div class="tabs-content">
+                <div id="tab1" class="tab-content active">
+                    <form id="odooConnectForm" onsubmit="submitOdooConnectForm(event)">
+                        <label for="odooDatabaseInput">Database Name:</label><br/>
+                        <input type="text" id="odooDatabaseInput" name="database" value="" class="full-width-input">
+                        <br/>
+                        <label for="odooUserInput">Odoo User:</label><br/>
+                        <input type="text" id="odooUserInput" name="user" value="admin" class="full-width-input">
+                        <br/>
+                        <label for="odooPasswordInput">Odoo Password:</label><br/>
+                        <input type="password" id="odooPasswordInput" name="password" value="admin"
+                               class="full-width-input">
+                        <br/>
+                        <button type="submit">Connect</button>
+                    </form>
+                </div>
+
+                <div id="tab2" class="tab-content">
+                    <form id="standaloneConnectForm" onsubmit="submitStandaloneConnectForm(event)">
+                        <label for="urlInput">Data Access API URL:</label><br/>
+                        <input type="text" id="urlInput" name="url"
+                               value="https://daa-git-add-table-count-romkes-projects.vercel.app"
+                               class="full-width-input">
+                        <br/>
+                        <label for="hostInput">Database Host:</label><br/>
+                        <input type="text" id="hostInput" name="host"
+                               value="database-3.camz002p5mgc.us-east-1.rds.amazonaws.com" class="full-width-input">
+                        <br/>
+                        <label for="portInput">Database Port:</label><br/>
+                        <input type="text" id="portInput" name="port" value="5432" class="full-width-input">
+                        <br/>
+                        <label for="databaseInput">Database Name:</label><br/>
+                        <input type="text" id="databaseInput" name="database" value="testdb10" class="full-width-input">
+                        <br/>
+                        <label for="userInput">Database User:</label><br/>
+                        <input type="text" id="userInput" name="user" value="odoo" class="full-width-input">
+                        <br/>
+                        <label for="passwordInput">Database Password:</label><br/>
+                        <input type="password" id="passwordInput" name="password" value="odoo1234"
+                               class="full-width-input">
+                        <br/>
+                        <button type="submit">Connect</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="header" onclick="toggleSection(1)">Selection</div>
+        <div class="content" id="section5">
+            <!-- Show Headers -->
+            <div class="scrollable-div">
+                <table>
+                    <thead>
+                    <tr>
+                        <th><input type="checkbox" onclick="selectAllSheets(this)"/></th>
+                        <th>File</th>
+                    </tr>
+                    </thead>
+                    <tbody id="sheets-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="header" onclick="toggleSection(2)">Actions</div>
+        <div class="content" id="section4">
+            <!-- Load/Post table contents -->
+            <input type="checkbox" id="insertCheckbox" checked><label for="insertCheckbox">Insert</label><br/>
+            <input type="checkbox" id="updateCheckbox" checked><label for="updateCheckbox">Update</label><br/>
+            <input type="checkbox" id="deleteCheckbox" checked><label for="deleteCheckbox">Delete</label><br/>
+            <input type="checkbox" id="deduplicateCheckbox"><label for="deduplicateCheckbox">Deduplicate</label>
+            <!-- Load/Post table contents -->
+            <br/><br/>
+            <div id="selectedSheetsCount">Tables Selected</div>
+            <br/>
+            <button id="evaluateTablesButton" onclick="callEvaluateTables()">Evaluate</button>
+            <button id="dryRunTablesButton" onclick="callDryRunTables()">Dry Run</button>
+            <button id="commitTablesButton" onclick="callCommitTables()">Commit</button>
+
+        </div>
+    </div>
+
+    <div id="feedback-section" class="section" style="display: none">
+        <div id="feedback-header" class="feedback-header header" onclick="toggleFeedbackSection()">Error</div>
+        <div id="feedback-content" class="feedback-content">
+            <div id="feedback-message">
+            </div>
+            <button id="stackTraceButton" onclick="copyStackTrace()" style="display: none;">Copy Stack Trace</button>
+            <div id="feedback-stacktrace" class="feedback-stacktrace" style="display: none;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // accordion scripts
+    function toggleSection(sectionNumber) {
+        const sections = document.getElementsByClassName("content");
+        for (var i = 0; i < sections.length; i++) {
+            // open if it's the right section and it's currently closed, close otherwise
+            const open = (i === sectionNumber) && !sections[i].style.maxHeight
+            sections[i].style.maxHeight = open ? sections[i].scrollHeight + "px" : null
+            if (open) {
+                onSectionOpen(i)
+            }
+        }
+    }
+
+    function toggleFeedbackSection() {
+        const section = document.getElementById("feedback-content");
+        // open if it's currently closed, close otherwise
+        const open = !section.style.maxHeight
+        section.style.maxHeight = open ? section.scrollHeight + "px" : null
+    }
+
+    function onSectionOpen(i) {
+        if (i === 0) {
+            fillOdooConnectParameters()
+        } else if (i === 1) {
+            callListSheets()
+        } else if (i == 2) {
+            setSelectedSheetCount()
+        }
+    }
+
+</script>
+
+<script>
+    // connect scripts
+
+    function fillOdooConnectParameters() {
+        const db = localStorage.getItem("db");
+        const user = localStorage.getItem("user");
+        document.forms.odooConnectForm.odooDatabaseInput.value = db;
+        document.forms.odooConnectForm.odooUserInput.value = user;
+    }
+
+    function submitOdooConnectForm(event) {
+        event.preventDefault();
+        localStorage.setItem("access_token", "");
+        const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+        const user = document.forms.odooConnectForm.odooUserInput.value;
+        const password = document.forms.odooConnectForm.odooPasswordInput.value;
+        // interestingly, you can always connect to an odoo.sh instance using <db>.dev.odoo.com, even a production database
+        // this is nice, because we don't have to ask the user to enter the full URL
+        const url = 'https://' + db + '.dev.odoo.com/stimula/1.0'
+        localStorage.setItem("url", url);
+        console.log(url)
+        runWithLoader('doOdooConnect', onOdooConnectSuccess, url, db, user, password)
+    }
+
+    function submitStandaloneConnectForm(event) {
+        event.preventDefault();
+        localStorage.setItem("access_token", "");
+        const url = document.forms.standaloneConnectForm.urlInput.value
+        localStorage.setItem("url", url);
+        runWithLoader('doStandaloneConnect', onSuccess, url, document.forms.standaloneConnectForm)
+    }
+
+    function onOdooConnectSuccess(response) {
+        var token = response['token']
+        localStorage.setItem("access_token", token);
+        const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+        const user = document.forms.odooConnectForm.odooUserInput.value;
+        localStorage.setItem("db", db);
+        localStorage.setItem("user", user);
+        toggleSection(1)
+    }
+
+</script>
+
+<!-- Selection scripts -->
+<script>
+    function selectAllSheets(checkbox) {
+        var tbody = document.getElementById('sheets-tbody');
+        for (var row of tbody.rows) {
+            row.cells[0].children[0].checked = checkbox.checked
+        }
+    }
+
+    function callListSheets() {
+        // fill the headers table with default headers, merged with the current header line
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        runWithLoader('getSheetsList', fillSheetsList, url, token)
+    }
+
+    function fillSheetsList(sheets) {
+        // get enabled sheets
+        const enabledSheets = getEnabledSheetslist()
+
+        // Get the table body
+        var tbody = document.getElementById('sheets-tbody');
+        tbody.innerHTML = ''
+
+        // Loop through the JSON data and create rows
+        sheets.forEach(function (row) {
+            const tr = document.createElement('tr');
+
+            // check if the sheet was enabled before refreshing
+            const enabled = enabledSheets.includes(row)
+
+            //
+            const td = createCheckbox(row, enabled)
+
+            tr.appendChild(td);
+
+            // Append the row to the table body
+            tbody.appendChild(tr);
+        });
+    }
+
+    function createCheckbox(row, enabled) {
+        const td = document.createElement('td');
+
+        // add checkbox
+        const input = document.createElement('input')
+        input.type = 'checkbox'
+        input.id = row
+        input.checked = enabled
+        td.appendChild(input);
+
+        // add label
+        const label = document.createElement('label')
+        label.textContent = row
+        label.htmlFor = row
+        td.appendChild(label)
+        return td
+    }
+
+</script>
+
+
+<!-- Actions scripts -->
+<script>
+
+    function callEvaluateTables() {
+        callPostMultiTable(false, false)
+    }
+
+    function callDryRunTables() {
+        callPostMultiTable(true, false)
+    }
+
+    function callCommitTables() {
+        callPostMultiTable(true, true)
+    }
+
+    function callPostMultiTable(isExecute, isCommit) {
+        const sheets = getEnabledSheetslist()
+        const url = localStorage.getItem("url");
+        const token = localStorage.getItem("access_token");
+        const isInsert = document.getElementById('insertCheckbox').checked;
+        const isUpdate = document.getElementById('updateCheckbox').checked;
+        const isDelete = document.getElementById('deleteCheckbox').checked;
+        const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
+        runWithLoader('postMultiTable', onPostTableResult, url, token, sheets, null, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
+    }
+
+    function getEnabledSheetslist() {
+        const tbody = document.getElementById('sheets-tbody');
+        const sheets = []
+        for (var tr of tbody.rows) {
+            if (tr.cells[0].children[0].checked) {
+                sheets.push(tr.cells[0].children[1].textContent)
+            }
+        }
+        return sheets
+    }
+
+    function setSelectedSheetCount() {
+        const selectedSheetCount = getEnabledSheetslist().length
+        document.getElementById('selectedSheetsCount').textContent = '' + selectedSheetCount + ' Tables Selected'
+    }
+
+
+    function onPostTableResult(summary) {
+        //   log summary
+        console.log(summary);
+
+        const errorMessage = createErrorMessage(summary)
+
+        if (errorMessage) {
+            displayError(errorMessage)
+        } else {
+            const successMessage = createSuccessMessage(summary)
+            displayMessage(successMessage)
+        }
+    }
+
+    function createErrorMessage(summary) {
+        const failed = summary.failed
+        if (failed) {
+            const total = failed.update + failed.insert + failed.delete
+            if (total === 0) {
+                return null
+            }
+
+            const type = 'SQL Error'
+            const short = 'Failed to process ' + total + ' tables.'
+            const msg = 'Failed to update ' + failed.update + ' update, to insert ' + failed.insert + ' records, and to delete ' + failed.delete + ' records.'
+            return {message: {type: type, short: short, msg: msg}}
+        }
+        return null
+    }
+
+    function createSuccessMessage(summary) {
+        if (!summary.execute) {
+            const total = summary.found.update + summary.found.insert + summary.found.delete
+            const short = 'Evaluated ' + total + ' records.'
+            const msg = 'Evaluated ' + summary.found.update + ' records to update, ' + summary.found.insert + ' records to insert, and ' + summary.found.delete + ' records to delete.'
+            return {short: short, msg: msg}
+        }
+        const total = summary.success.update + summary.success.insert + summary.success.delete
+        if (!summary.commit) {
+            const short = 'Completed dry-run for ' + total + ' records.'
+            const msg = 'Completed dry-run for ' + summary.success.update + ' records to update, ' + summary.success.insert + ' records to insert, and ' + summary.success.delete + ' records to delete.'
+            return {short: short, msg: msg}
+        }
+        const short = 'Committed ' + total + ' records.'
+        const msg = 'Committed ' + summary.success.update + ' records to update, ' + summary.success.insert + ' records to insert, and ' + summary.success.delete + ' records to delete.'
+        return {short: short, msg: msg}
+    }
+
+</script>
+
+<!-- Common scripts   -->
+<script>
+
+    function runWithLoader(funcToCall, callback) {
+        // Show loading cursor
+        showLoadingSpinner()
+
+        // clear error
+        clearFeedback()
+
+        // Get the additional arguments starting from the second one
+        var additionalArgs = Array.prototype.slice.call(arguments, 2);
+
+        // check if we're running in a local browser
+        if (typeof google !== 'undefined') {
+            // Call the specified function using google.script.run
+            google.script.run.withSuccessHandler(function (result) {
+                // Reset cursor to default
+                hideLoadingSpinner()
+                // Invoke the callback function (if provided) with the result
+                if (callback) {
+                    callback(result);
+                }
+            }).withFailureHandler(function (error) {
+                // Reset cursor to default
+                hideLoadingSpinner()
+
+                // display error
+                displayError(error)
+            })[funcToCall].apply(null, additionalArgs)
+        } else {
+            // Reset cursor to default
+            hideLoadingSpinner()
+
+            // display error
+            displayError({message: 'Google environment not loaded'})
+        }
+    }
+
+    function showLoadingSpinner() {
+        // Set the cursor style for specific elements, e.g., buttons and labels
+        document.querySelectorAll('div, button, label, li').forEach(function (element) {
+            element.style.cursor = 'wait';
+        });
+    }
+
+    function hideLoadingSpinner() {
+        // Reset the cursor style for specific elements
+        document.querySelectorAll('div, button, label, li').forEach(function (element) {
+            element.style.cursor = 'default';
+        });
+    }
+</script>
+
+
+<!-- User feedback and error scripts -->
+<script>
+    function clearFeedback() {
+        const feedbackSection = document.getElementById('feedback-section')
+        // hide
+        feedbackSection.style.display = "none";
+        // close
+        const content = document.getElementById("feedback-content");
+        content.style.maxHeight = null
+        // clear text
+        document.getElementById('feedback-header').innerHTML = ''
+        document.getElementById('feedback-message').innerHTML = ''
+        document.getElementById('feedback-stacktrace').innerHTML = ''
+        // clear error style
+        document.getElementById('feedback-header').classList.remove('error-header')
+        // hide copy stack trace button
+        const stackTraceButton = document.getElementById("stackTraceButton");
+        stackTraceButton.style.display = "none";
+
+    }
+
+    function displayMessage(m) {
+        // display message
+        const feedbackSection = document.getElementById('feedback-section')
+        feedbackSection.style.display = "block";
+        document.getElementById('feedback-header').innerHTML = m.short
+        document.getElementById('feedback-message').innerHTML = m.msg
+    }
+
+    function displayError(e) {
+
+        // display error
+        const feedbackSection = document.getElementById('feedback-section')
+        feedbackSection.style.display = "block";
+        // set error style
+        document.getElementById('feedback-header').classList.add('error-header')
+
+        const MAX_LENGTH = 40
+        try {
+            // for API errors
+            // if error is string, parse it
+            var error = e.message
+            if (typeof error === 'string') {
+                error = JSON.parse(error);
+            }
+            document.getElementById('feedback-header').innerHTML = shortenString(error.type + ': ' + error.short, MAX_LENGTH)
+            document.getElementById('feedback-message').innerHTML = error.msg
+            if (error.trace) {
+                document.getElementById('feedback-stacktrace').innerHTML = error.trace
+                const stackTraceButton = document.getElementById("stackTraceButton");
+                stackTraceButton.style.display = "block";
+            }
+        } catch (err) {
+            // for other errors
+            document.getElementById('feedback-header').innerHTML = shortenString(e.message, MAX_LENGTH)
+            document.getElementById('feedback-message').innerHTML = e.message
+            if (e.stack) {
+                document.getElementById('feedback-stacktrace').innerHTML = e.toString() + '\n' + e.stack
+                const stackTraceButton = document.getElementById("stackTraceButton");
+                stackTraceButton.style.display = "block";
+            }
+        }
+    }
+
+    function shortenString(inputString, maxLength) {
+        if (inputString.length <= maxLength) {
+            return inputString;
+        } else {
+            return inputString.substring(0, maxLength - 3) + '...';
+        }
+    }
+
+    function copyStackTrace() {
+        var traceContent = document.getElementById('feedback-stacktrace').textContent;
+
+        // Use the Clipboard API to copy the content to the clipboard
+        navigator.clipboard.writeText(traceContent).then(function () {
+            console.log('Stack trace copied');
+        }).catch(function (err) {
+            console.error('Unable to copy stack trace to clipboard:', err);
+        });
+    }
+
+</script>
+
+<script>
+    // Now that all functions are available, open the first section on page load
+    toggleSection(0)
+</script>
+
+</body>
+
+</html>

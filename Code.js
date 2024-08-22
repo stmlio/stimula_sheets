@@ -2,14 +2,23 @@ function onOpen() {
     SpreadsheetApp
         .getUi()
         .createMenu("Stimula")
-        .addItem("Instant STML", "openSidebar")
+        .addItem("STML Export", "openExport")
+        .addItem("STML Import", "openImport")
         .addToUi();
 }
 
-function openSidebar() {
+function openExport() {
     const version = '0.1'
-    var htmlOutput = HtmlService.createHtmlOutputFromFile('sidebar')
-        .setTitle('Instant STML (' + version + ')')
+    var htmlOutput = HtmlService.createHtmlOutputFromFile('export')
+        .setTitle('STML Export (' + version + ')')
+        .setWidth(100);
+    SpreadsheetApp.getUi().showSidebar(htmlOutput);
+}
+
+function openImport() {
+    const version = '0.1'
+    var htmlOutput = HtmlService.createHtmlOutputFromFile('import')
+        .setTitle('STML Import (' + version + ')')
         .setWidth(100);
     SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
@@ -260,64 +269,9 @@ function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, is
     return result['summary']
 }
 
-function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
-    // comma separate sheet names
-    const tables = sheetNames.join(',')
-
-    // log sheet names
-    Logger.log('Exporting sheets: ' + tables)
-
-    const url = baseUrl + '/tables?style=full&t=' + tables
-        + (isInsert ? '&insert=true' : '')
-        + (isUpdate ? '&update=true' : '')
-        + (isDelete ? '&delete=true' : '')
-        + (isExecute ? '&execute=true' : '')
-        + (isCommit ? '&commit=true' : '')
-    // convert sheets to csv files
-    const files = exportSheets(sheetNames)
-    // create multipart request
-    const multipartData = createMultipartBody(files);
-    const options = {
-        method: 'POST',
-        contentType: `multipart/form-data; boundary=${multipartData.boundary}`,
-        payload: multipartData.body,
-        muteHttpExceptions: true
-    };
 
 
-    // clear formatting
-    _clearMultiPostResult(sheetNames)
 
-    response = _makeHttpRequest(url, options, token)
-
-    // parse response
-    result = JSON.parse(response)
-
-    // display line-by-line feedback in sheets
-    _displayMultiPostFullReport(result['rows'], sheetNames, isExecute)
-
-    // return summary for the front-end to display
-    return result['summary']
-}
-
-function exportSheets(sheets) {
-
-    // Prepare the files to be sent
-    const files = sheets.map(sheetName => {
-        // log sheet name
-        Logger.log('Exporting sheet: ' + sheetName)
-        // get sheet by name
-        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-        const content = _getSheetAsCsv(sheet);
-        return {
-            name: `${sheetName}.csv`,
-            mimeType: 'text/csv',
-            content: content
-        };
-    });
-
-    return files
-}
 
 function createMultipartBody(files) {
     const boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
@@ -338,9 +292,12 @@ function createMultipartBody(files) {
     };
 }
 
-
 function _getSheetAsCsv(sheet) {
     const dataRange = sheet.getDataRange().getValues();
+    return _convertDataRangeToCsv(dataRange)
+}
+
+function _convertDataRangeToCsv(dataRange) {
 
     var csv = '';
 
@@ -386,109 +343,6 @@ function _displayPostResult(content) {
     sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
 }
 
-function _clearMultiPostResult(sheetNames) {
-    sheetNames.forEach(sheetName => {
-        _clearPostResult(sheetName)
-    })
-}
-
-function _clearPostResult(context) {
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
-    var sheet = spreadsheet.getSheetByName(context);
-    if (!sheet) {
-        return
-    }
-    // remove background color of complete sheet
-    if (sheet.getLastRow() > 0) {
-        sheet.getRange(1, 1, sheet.getLastRow(), sheet.getLastColumn()).setBackground(null)
-        // clear notes of first column
-        sheet.getRange(1, 1, sheet.getLastRow(), 1).clearNote()
-    }
-
-}
-
-function _displayMultiPostFullReport(rows, sheetNames, isExecute) {
-    //     iterate over sheets
-    //     iterate rows and log context attribute
-    rows.forEach(row => {
-        Logger.log('Context: ' + row.context)
-    })
-
-    sheetNames.forEach(sheetName => {
-        // log sheetname
-        Logger.log('Displaying sheet: ' + sheetName)
-        // filter rows for this sheet
-        const sheetRows = rows.filter(row => row.context == (sheetName + '.csv'))
-        // logger row count
-        Logger.log('Rows: ' + sheetRows.length)
-        // display rows
-        _displayPostFullReport(sheetRows, sheetName, isExecute)
-    })
-
-}
-
-function _displayPostFullReport(rows, context, isExecute) {
-//   find and activate sheet based on context
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet()
-    var sheet = spreadsheet.getSheetByName(context);
-    if (!sheet) {
-        return
-    }
-
-    // iterate rows
-    for (var i = 0; i < rows.length; i++) {
-        const row = rows[i]
-
-        // convert from string to integer
-
-        const lineNumber = parseInt(row.line_number)
-        // undefined also means success
-        const success = row.success || row.success === undefined
-
-        // log line and success
-        Logger.log('Line: ' + lineNumber + ', Success: ' + success)
-
-        // if line is NaN, skip
-        // TODO, figure out how to display deletes
-        if (isNaN(lineNumber)) {
-            continue
-        }
-        // get line number
-        // select full row
-        const range = sheet.getRange(lineNumber + 2, 1, 1, sheet.getLastColumn())
-
-        // set background color based on success
-        if (success) {
-            if (isExecute) {
-                // bright green for execute
-                range.setBackground('#44FF44')
-            } else {
-                // light green for not execute
-                range.setBackground('#AAFFAA')
-            }
-        } else {
-            range.setBackground('#FF4444')
-        }
-
-        //   select first column of row
-        const cell = sheet.getRange(lineNumber + 2, 1)
-
-        // get error
-        const error = row.error
-        // get query and parameters
-        const query = row.query
-        const params = row.params
-        // format error
-        errorMessage = error ? 'Error: ' + error + '\n\n' : ''
-        // add query
-        errorMessage += query + '\n\n'
-        // add parameters as json string
-        errorMessage += JSON.stringify(params, null, 2)
-
-        // set error message as note
-        cell.setNote(errorMessage)
-    }
-}
 
 function viewResult() {
     _activateSheet("result")
