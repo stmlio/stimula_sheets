@@ -2,8 +2,8 @@ function onOpen() {
     SpreadsheetApp
         .getUi()
         .createMenu("Stimula")
-        .addItem("STML Export", "openExport")
         .addItem("STML Import", "openImport")
+        .addItem("STML Export", "openExport")
         .addToUi();
 }
 

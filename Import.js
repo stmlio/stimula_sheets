@@ -1,9 +1,58 @@
+function createStmlSheet(sampleDataRows) {
+    // check that this is not an STML sheet
+    assert(!SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getRange(1, 1).getValue().startsWith('@'), 'This is already an STML sheet')
+    // get current active sheet
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
+    // get sheet name
+    const sheetName = sheet.getName()
+    // start with empty suffix
+    let suffix = ''
+    // iterate over suffixes until free sheetname found
+    while (SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName + suffix + '.stml')) {
+        // increment suffix
+        suffix = (parseInt(suffix) || 0) + 1
+    }
+    // create new sheet with suffix
+    const stmlSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(sheetName + suffix + '.stml')
+    // activate new sheet
+    SpreadsheetApp.setActiveSheet(stmlSheet)
+    // set cell A1 to '@source'
+    stmlSheet.getRange(1, 1).setValue('@source')
+    // set cell B1 to source sheet name
+    stmlSheet.getRange(1, 2).setValue(sheetName)
+    // set cell A2 to '@target'
+    stmlSheet.getRange(2, 1).setValue('@target')
+    // set cell A4 to 'source_column'
+    stmlSheet.getRange(4, 1).setValue('source_column')
+    // set cell B4 to 'target_column'
+    stmlSheet.getRange(4, 2).setValue('target_column')
+    // set cell C4 to 'unique'
+    stmlSheet.getRange(4, 3).setValue('unique')
+    // copy first row from source sheet
+    const sourceRange = sheet.getRange(1, 1, 1, sheet.getLastColumn())
+    // transpose and paste to STML sheet, starting at A5
+    sourceRange.copyTo(stmlSheet.getRange(5, 1), SpreadsheetApp.CopyPasteType.PASTE_NORMAL, true)
+
+    Logger.log('Sample data rows: ' + sampleDataRows)
+    if (sampleDataRows > 0) {
+        // copy sample data rows from source sheet
+        const sampleRange = sheet.getRange(2, 1, sampleDataRows, sheet.getLastColumn())
+        // transpose and paste to STML sheet, starting at E5
+        sampleRange.copyTo(stmlSheet.getRange(5, 5), SpreadsheetApp.CopyPasteType.PASTE_NORMAL, true)
+    }
+    //     freeze top four rows
+    stmlSheet.setFrozenRows(4)
+
+}
+
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
     // log sheet names
     Logger.log('Exporting sheets: ' + sheetNames.join(','))
 
     // get sheets
     const sheets = _getSheets(sheetNames)
+
+    Logger.log('Sheets: ' + sheets)
 
     // convert source sheets to csv files
     const files = _exportSheets(sheets)
@@ -24,6 +73,8 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
 
     // get source sheets to update results in
     const sourceSheets = _getSourceSheets(sheets)
+
+    Logger.log('Clear source sheets: ' + sourceSheets)
 
     // clear formatting
     _clearMultiPostResult(sourceSheets)
@@ -46,10 +97,15 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
 function _getSheets(sheetNames) {
     // get sheets by name
     return sheetNames.map(sheetName => {
-        return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName)
+        Logger.log('Getting sheet: ' + sheetName)
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName)
+        Logger.log('Found sheet: ' + sheet)
+        // assert sheet exists
+        assert(sheet, 'Sheet ' + sheetName + ' does not exist')
+        Logger.log('Sheet name: ' + sheet.getName())
+        return sheet
     })
 }
-
 
 
 function _exportSheets(sheets) {
@@ -79,6 +135,7 @@ function _exportSheets(sheets) {
 
     return files
 }
+
 function _getSourceSheets(sheets) {
     // get list of source sheets that contain the actual data to display results in
     const sourceSheets = sheets.map(sheet => {
