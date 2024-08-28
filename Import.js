@@ -246,7 +246,7 @@ function _getModifierColumnNames(sheet, headerRow) {
     // get list of additional non-empty headers to treat as modifiers from the first row
     const modifiers = sheet.getRange(headerRow, 3, 1, sheet.getLastColumn() - 2).getValues()[0]
     // supported modifiers
-    const knownModifiers = ['unique', 'skip', 'default-value', 'exp']
+    const knownModifiers = ['unique', 'skip', 'default-value', 'exp', 'deduplicate', 'table', 'name', 'qualifier', 'key']
     // list unknown modifiers
     const unknownModifiers = modifiers.filter(modifier => modifier && !knownModifiers.includes(modifier))
     // assert no unknown modifiers
