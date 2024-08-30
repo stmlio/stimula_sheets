@@ -45,7 +45,7 @@ function createStmlSheet(sampleDataRows) {
 
 }
 
-function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
+function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
     // log sheet names
     Logger.log('Exporting sheets: ' + sheetNames.join(','))
 

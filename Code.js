@@ -186,7 +186,6 @@ function _setCellFormat(headerWithTypes) {
 function _displaySheet(name, content) {
     const data = Utilities.parseCsv(content);
     const sheet = _activateSheet(name)
-    _clearPostResult(name)
     sheet.clear();
     sheet.getRange(1, 1, data.length, data[0].length).setValues(data);
 }
@@ -225,52 +224,6 @@ function _getCurrentHeader() {
 
     return encodedString
 }
-
-function postTable(baseUrl, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate) {
-    // get active sheet name, we'll post it as context
-    const sheet = SpreadsheetApp.getActiveSheet()
-    const sheetName = sheet.getName()
-    // get table name from active sheet
-    const tableName = _getActiveTableName(baseUrl, token)
-    const header = _getCurrentHeader(tableName)
-    const url = baseUrl + '/tables/' + tableName + '?style=full&skiprows=1'
-        + (isInsert ? '&insert=true' : '')
-        + (isUpdate ? '&update=true' : '')
-        + (isDelete ? '&delete=true' : '')
-        + (isExecute ? '&execute=true' : '')
-        + (isCommit ? '&commit=true' : '')
-        + (isDeduplicate ? '&deduplicate=true' : '')
-        + (header ? '&h=' + header : '')
-        + (whereClause ? '&q=' + whereClause : '')
-        + '&context=' + sheetName
-    const csv = _getSheetAsCsv(sheet)
-    const options = {
-        "method": "post",
-        "contentType": "text/csv",
-        "payload": csv,
-    };
-
-    // clear formatting
-    _clearPostResult(sheetName)
-
-    response = _makeHttpRequest(url, options, token)
-
-    // store last posted table name so we can move back to this sheet after hiding the result sheet
-    PropertiesService.getUserProperties().setProperty('last-posted-table-name', tableName)
-
-    // parse response
-    result = JSON.parse(response)
-
-    // display line-by-line feedback in sheets
-    _displayBackgroundColor(result['rows'], sheet, isExecute)
-    _displayNotes(result['rows'], sheet)
-
-    // return summary for the front-end to display
-    return result['summary']
-}
-
-
-
 
 
 function createMultipartBody(files) {

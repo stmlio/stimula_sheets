@@ -329,38 +329,6 @@
         <!-- Extract table contents -->
         <button id="extractTableButton" onclick="callExtractTable()">Extract Table</button>
         <br/>
-        <!-- Load/Post table contents -->
-        <input type="checkbox" id="insertCheckbox" checked><label for="insertCheckbox">Insert</label><br/>
-        <input type="checkbox" id="updateCheckbox" checked><label for="updateCheckbox">Update</label><br/>
-        <input type="checkbox" id="deleteCheckbox" checked><label for="deleteCheckbox">Delete</label><br/>
-        <input type="checkbox" id="executeCheckbox"><label for="executeCheckbox">Execute SQL</label><br/>
-        <input type="checkbox" id="commitCheckbox"><label for="commitCheckbox">Commit SQL</label><br/>
-        <input type="checkbox" id="deduplicateCheckbox"><label for="deduplicateCheckbox">Deduplicate</label>
-        <button id="postTableButton" onclick="callPostTable()">Post Table</button>
-        <div id="summary-message" class="summary-message"></div>
-        <button id="viewResultButton" class="small-button" onclick="callViewResult()">View Result</button>
-        <button id="hideResultButton" class="small-button" onclick="callHideResult()">Hide Result</button>
-    </div>
-</div>
-
-<div class="section">
-    <div class="header" onclick="toggleSection(5)">Multiple Post</div>
-    <div class="content" id="section5">
-        <!-- Show Headers -->
-        <div class="scrollable-div">
-            <table>
-                <thead>
-                <tr>
-                    <th><input type="checkbox" onclick="selectAllSheets(this)"/></th>
-                    <th>File</th>
-                </tr>
-                </thead>
-                <tbody id="sheets-tbody">
-                </tbody>
-            </table>
-        </div>
-        <!-- Load/Post table contents -->
-        <button id="postMultiTableButton" onclick="callPostMultiTable()">Post Multiple Tables</button>
     </div>
 </div>
 
@@ -673,40 +641,6 @@
         runWithLoader('getTable', null, url, token, whereClause)
     }
 
-    function callPostTable() {
-        const url = localStorage.getItem("url");
-        const token = localStorage.getItem("access_token");
-        const isInsert = document.getElementById('insertCheckbox').checked;
-        const isUpdate = document.getElementById('updateCheckbox').checked;
-        const isDelete = document.getElementById('deleteCheckbox').checked;
-        const isExecute = document.getElementById('executeCheckbox').checked;
-        const isCommit = document.getElementById('commitCheckbox').checked;
-        const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
-        const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
-        const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
-        runWithLoader('postTable', onPostTableResult, url, token, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
-    }
-
-    function onPostTableResult(summary) {
-        //   log summary
-        console.log('summary: ' + summary);
-
-        //   display summary in summary-message div
-        const summaryMessage = document.getElementById('summary-message');
-
-        // convert summary to json string
-        const summaryJson = JSON.stringify(summary, null, 2);
-
-        summaryMessage.innerHTML = summaryJson;
-    }
-
-    function callViewResult() {
-        runWithLoader('viewResult')
-    }
-
-    function callHideResult() {
-        runWithLoader('hideResult')
-    }
 
     function runWithLoader(funcToCall, callback) {
         // Show loading cursor
@@ -757,80 +691,6 @@
             element.style.cursor = 'default';
         });
     }
-</script>
-
-<!-- Multi Post scripts -->
-<script>
-    function selectAllSheets(checkbox) {
-        var tbody = document.getElementById('sheets-tbody');
-        for (var row of tbody.rows) {
-            row.cells[0].children[0].checked = checkbox.checked
-        }
-    }
-
-    function callListSheets() {
-        // fill the headers table with default headers, merged with the current header line
-        const url = localStorage.getItem("url");
-        const token = localStorage.getItem("access_token");
-        runWithLoader('getSheetsList', fillSheetsList, url, token)
-    }
-
-    function fillSheetsList(sheets) {
-        // Get the table body
-        var tbody = document.getElementById('sheets-tbody');
-        tbody.innerHTML = ''
-
-        // Loop through the JSON data and create rows
-        sheets.forEach(function (row) {
-            var tr = document.createElement('tr');
-
-            tr.appendChild(createCheckbox());
-
-            td = document.createElement('td');
-            td.textContent = row;
-            tr.appendChild(td);
-
-            // Append the row to the table body
-            tbody.appendChild(tr);
-        });
-    }
-
-    function createCheckbox() {
-        var td = document.createElement('td');
-        var input = document.createElement('input')
-        input.type = 'checkbox'
-        td.appendChild(input);
-        return td
-    }
-
-    function callPostMultiTable() {
-        const sheets = getEnabledSheetslist()
-
-
-        const url = localStorage.getItem("url");
-        const token = localStorage.getItem("access_token");
-        const isInsert = document.getElementById('insertCheckbox').checked;
-        const isUpdate = document.getElementById('updateCheckbox').checked;
-        const isDelete = document.getElementById('deleteCheckbox').checked;
-        const isExecute = document.getElementById('executeCheckbox').checked;
-        const isCommit = document.getElementById('commitCheckbox').checked;
-        const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
-        const isWhereClauseEnabled = document.getElementById('whereClauseCheckbox').checked;
-        const whereClause = isWhereClauseEnabled ? document.getElementById('whereClauseInput').value : null;
-        runWithLoader('postMultiTable', onPostTableResult, url, token, sheets, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
-    }
-
-    function getEnabledSheetslist() {
-        const tbody = document.getElementById('sheets-tbody');
-        const sheets = []
-        for (var row of tbody.rows) {
-            if (row.cells[0].children[0].checked) {
-                sheets.push(row.cells[1].textContent)
-            }
-        }
-        return sheets
-    }
-
 </script>
 
 <!-- User feedback and error scripts -->

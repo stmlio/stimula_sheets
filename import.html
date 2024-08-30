@@ -306,14 +306,13 @@
             <input type="checkbox" id="insertCheckbox" checked><label for="insertCheckbox">Insert</label><br/>
             <input type="checkbox" id="updateCheckbox" checked><label for="updateCheckbox">Update</label><br/>
             <input type="checkbox" id="deleteCheckbox" checked><label for="deleteCheckbox">Delete</label><br/>
-            <input type="checkbox" id="deduplicateCheckbox"><label for="deduplicateCheckbox">Deduplicate</label>
             <!-- Load/Post table contents -->
             <br/><br/>
             <div id="selectedSheetsCount">Tables Selected</div>
             <br/>
             <button id="evaluateTablesButton" onclick="callEvaluateTables()">Evaluate (no execute)</button>
-            <button id="dryRunTablesButton" onclick="callDryRunTables()">Dry Run (execute, no commit)</button>
-            <button id="commitTablesButton" onclick="callCommitTables()">Commit (execute and commit)</button>
+            <button id="dryRunTablesButton" onclick="callDryRunTables()">Dry Run (execute, rollback)</button>
+            <button id="commitTablesButton" onclick="callCommitTables()">Commit (execute, commit)</button>
 
         </div>
     </div>
@@ -505,8 +504,7 @@
         const isInsert = document.getElementById('insertCheckbox').checked;
         const isUpdate = document.getElementById('updateCheckbox').checked;
         const isDelete = document.getElementById('deleteCheckbox').checked;
-        const isDeduplicate = document.getElementById('deduplicateCheckbox').checked;
-        runWithLoader('postMultiTable', onPostTableResult, url, token, sheets, null, isInsert, isUpdate, isDelete, isExecute, isCommit, isDeduplicate)
+        runWithLoader('postMultiTable', onPostTableResult, url, token, sheets, null, isInsert, isUpdate, isDelete, isExecute, isCommit)
     }
 
     function getEnabledSheetslist() {
