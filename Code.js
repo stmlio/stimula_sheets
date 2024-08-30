@@ -1,3 +1,5 @@
+const VERSION = '0.2'
+
 function onOpen() {
     SpreadsheetApp
         .getUi()
@@ -7,18 +9,16 @@ function onOpen() {
         .addToUi();
 }
 
-function openExport() {
-    const version = '0.1'
-    var htmlOutput = HtmlService.createHtmlOutputFromFile('export')
-        .setTitle('STML Export (' + version + ')')
+function openImport() {
+    var htmlOutput = HtmlService.createHtmlOutputFromFile('import')
+        .setTitle('STML Import (' + VERSION + ')')
         .setWidth(100);
     SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
 
-function openImport() {
-    const version = '0.1'
-    var htmlOutput = HtmlService.createHtmlOutputFromFile('import')
-        .setTitle('STML Import (' + version + ')')
+function openExport() {
+    var htmlOutput = HtmlService.createHtmlOutputFromFile('export')
+        .setTitle('STML Export (' + VERSION + ')')
         .setWidth(100);
     SpreadsheetApp.getUi().showSidebar(htmlOutput);
 }
