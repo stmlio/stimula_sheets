@@ -547,7 +547,7 @@
             }
 
             const type = 'SQL Error'
-            const short = 'Failed to process ' + total + ' tables.'
+            const short = 'Failed to process ' + total + ' records.'
             const msg = 'Failed to update ' + failed.update + ' records, to insert ' + failed.insert + ' records, and to delete ' + failed.delete + ' records.'
             return {message: {type: type, short: short, msg: msg}}
         }
