@@ -344,7 +344,12 @@ function _makeHttpRequest(url, options, token = null) {
     // Log the method, URL and optional payload
     Logger.log(method + ' ' + url)
     if (options.payload) {
-        Logger.log(options.payload)
+        // truncate long payloads
+        if (options.payload.length > 1000) {
+            Logger.log(options.payload.substring(0, 1000) + '...')
+        } else {
+            Logger.log(options.payload)
+        }
     }
 
     // Set the muteHttpExceptions option to true to prevent HTTP 4xx and 5xx errors from being treated as exceptions.

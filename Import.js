@@ -1,3 +1,18 @@
+var startTime;
+
+function tick(message) {
+    if (!startTime) {
+        Logger.log("Timer started.");
+        startTime = new Date();
+        return;
+    }
+
+    var currentTime = new Date();
+    var elapsedTime = (currentTime - startTime)
+    startTime = currentTime;
+    Logger.log(message + " - Elapsed time: " + elapsedTime + " ms");
+}
+
 function createStmlSheet(sampleDataRows) {
     // check that this is not an STML sheet
     assert(!SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getRange(1, 1).getValue().startsWith('@'), 'This is already an STML sheet')
@@ -49,13 +64,17 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
     // log sheet names
     Logger.log('Exporting sheets: ' + sheetNames.join(','))
 
+    tick('Start')
+
     // get sheets
     const sheets = _getSheets(sheetNames)
 
-    Logger.log('Sheets: ' + sheets)
+    tick('Got sheets')
 
     // convert source sheets to csv files
     const files = _exportSheets(sheets)
+
+    tick('Exported sheets')
 
     // resolve table names
     const tables = _getTableNames(sheets)
@@ -81,14 +100,20 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
 
     response = _makeHttpRequest(url, options, token)
 
+    tick('Posted tables')
+
     // parse response
     result = JSON.parse(response)
 
-    // log rows
-    Logger.log(result['rows'])
+    // log max 3 rows
+    Logger.log(result['rows'].slice(0, 3))
+
+    tick('Parsed response')
 
     // display line-by-line feedback in sheets
     _displayMultiPostFullReport(result['rows'], sourceSheets, isExecute)
+
+    tick('Displayed results')
 
     // return summary for the front-end to display
     return result['summary']
@@ -97,12 +122,9 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
 function _getSheets(sheetNames) {
     // get sheets by name
     return sheetNames.map(sheetName => {
-        Logger.log('Getting sheet: ' + sheetName)
         const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName)
-        Logger.log('Found sheet: ' + sheet)
         // assert sheet exists
         assert(sheet, 'Sheet ' + sheetName + ' does not exist')
-        Logger.log('Sheet name: ' + sheet.getName())
         return sheet
     })
 }
@@ -118,10 +140,15 @@ function _exportSheets(sheets) {
         if (sheet.getRange(1, 1).getValue().startsWith('@')) {
             // get source sheet
             const sourceSheet = _getSourceSheet(sheet);
+
+            tick('Got source sheet')
+
             // get STML map and list
             const stml = _getSheetAsStml(sheet);
+
             // replace header line with STML
             const contentWithHeader = _getSheetAsCsvWithStml(sourceSheet, stml);
+
             return {
                 name: `${sourceSheet.getName()}.csv`, mimeType: 'text/csv', content: contentWithHeader
             };
@@ -199,52 +226,57 @@ function _getSheetAsStml(sheet) {
     //     - map with source column names as keys and target column names as values.
     //     - array of additional columns: target column names that do not have a source column name.
 
+    // Retrieve all the data from the sheet at once
+    const allData = sheet.getDataRange().getValues();
+
+    tick('Got all data')
+
     // find row with 'source_column' in A column
-    const headerRow = _findRow(sheet, 'source_column')
-    // assert header row is found
+    const headerRow = _findRow(allData, 'source_column')
     assert(headerRow >= 0, 'Missing header row with source_column in STML sheet')
+
     // assert column B is 'target_column'
-    let targetColumnKey = sheet.getRange(headerRow, 2).getValue();
-    assert(targetColumnKey === 'target_column', 'Missing target_column in STML sheet, found: ' + targetColumnKey)
+    const targetColumnKey = allData[headerRow][1];
+    assert(targetColumnKey === 'target_column', 'Missing target_column header in STML sheet, found: ' + targetColumnKey)
+
     // get modifier column names
-    const modifiers = _getModifierColumnNames(sheet, headerRow);
+    const modifiers = _getModifierColumnNames(allData, headerRow);
+    tick('Got modifiers')
 
     const columnMap = {}
     const additionalColumns = []
-    // iterate over rows
-    for (let i = headerRow + 1; i <= sheet.getLastRow(); i++) {
-        const sourceColumn = sheet.getRange(i, 1).getValue()
-        const targetColumn = _createTargetColumnName(sheet, i, modifiers)
+
+    // Iterate over rows, starting from the row after the header
+    for (let i = headerRow + 1; i < allData.length; i++) {
+        const sourceColumn = allData[i][0]
+        const targetColumn = _createTargetColumnName(allData, i, modifiers)
 
         if (sourceColumn && targetColumn) {
-            //     if source and target are not empty, add to map
+            // if source and target are not empty, add to map
             columnMap[sourceColumn] = targetColumn
         } else if (!sourceColumn && targetColumn) {
             // if source column is empty, add target to additional columns
             additionalColumns.push(targetColumn)
         }
-
     }
     return [columnMap, additionalColumns]
 }
 
-function _findRow(sheet, text) {
-    // get all values in column A
-    const values = sheet.getRange('A:A').getValues();
-    // find row with text
-    for (let i = 0; i < values.length; i++) {
-        if (values[i][0] === text) {
-            // sheets are 1-indexed
-            return i + 1;
+function _findRow(allData, text) {
+    // find row with text in first column
+    for (let i = 0; i < allData.length; i++) {
+        if (allData[i][0] === text) {
+            // return header row number (0-indexed)
+            return i ;
         }
     }
     return -1
 }
 
 
-function _getModifierColumnNames(sheet, headerRow) {
+function _getModifierColumnNames(allData, headerRow) {
     // get list of additional non-empty headers to treat as modifiers from the first row
-    const modifiers = sheet.getRange(headerRow, 3, 1, sheet.getLastColumn() - 2).getValues()[0]
+    const modifiers = allData[headerRow].slice(2)
     // supported modifiers
     const knownModifiers = ['unique', 'skip', 'default-value', 'exp', 'deduplicate', 'table', 'name', 'qualifier', 'key']
     // list unknown modifiers
@@ -254,16 +286,18 @@ function _getModifierColumnNames(sheet, headerRow) {
     return modifiers;
 }
 
-function _createTargetColumnName(sheet, rowIndex, modifiers) {
-    // get base target column name
-    const targetColumn = sheet.getRange(rowIndex, 2).getValue()
+function _createTargetColumnName(allData, rowIndex, modifiers) {
+    // Get base target column name from column B (index 1) in the current row
+    const targetColumn = allData[rowIndex][1];  // Column B (target_column)
     const modifierList = []
+
     // iterate over modifiers
     for (let i = 0; i < modifiers.length; i++) {
         // if modifier name is not empty
         if (modifiers[i]) {
-            // get modifier value
-            const modifierValue = sheet.getRange(rowIndex, i + 3).getValue()
+            // Get modifier value from the respective column in the current row (starting from column C)
+            const modifierValue = allData[rowIndex][i + 2];  // Column C onwards (index 2 and beyond)
+
             // if modifier value is not empty
             if (modifierValue !== '') {
                 // add to list
@@ -301,10 +335,17 @@ function _getSheetAsCsvWithStml(sheet, stml) {
     const headerLine = _convertDataRangeToCsv([substitutedHeaderNames])
     // get rows 2 and below
     const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues()
+
+    tick('Got rows')
+
     // pad with empty values for additional columns
     const paddedRows = rows.map(row => row.concat(Array(additionalColumns.length).fill('')))
+
     // convert rows to csv
     const rowsCsv = _convertDataRangeToCsv(paddedRows)
+
+    tick('Converted rows to csv')
+
     // return header line and rows
     return headerLine + '\n' + rowsCsv
 }
@@ -327,22 +368,26 @@ function _clearPostResult(sheet) {
 
 function _displayMultiPostFullReport(rows, sheets, isExecute) {
     //     iterate over sheets
-    //     iterate rows and log context attribute
-    rows.forEach(row => {
-        Logger.log('Context: ' + row.context)
-    })
-
     sheets.forEach(sheet => {
         // log sheetname
         Logger.log('Displaying sheet: ' + sheet.getName())
         // filter rows for this sheet
-        const sheetRows = rows.filter(row => row.context == (sheet.getName() + '.csv'))
+        const sheetName = sheet.getName() + '.csv';
+        const sheetRows = rows.filter(row => row.context == sheetName);
+
+        tick('Filtered rows')
+
         // logger row count
         Logger.log('Rows: ' + sheetRows.length)
         // display background color in rows
         _displayBackgroundColor(sheetRows, sheet, isExecute)
+
+        tick('Displayed background color')
+
         // display notes in first column
         _displayNotes(sheetRows, sheet)
+
+        tick('Displayed notes')
 
     })
 
@@ -385,8 +430,6 @@ function _displayNotes(rows, sheet) {
         // format error
         notesArray[lineNumber] = (row.error ? 'Error: ' + row.error + '\n\n' : '') + row.query + '\n\n' + JSON.stringify(row.params, null, 2)
     })
-
-    Logger.log(notesArray)
 
     // set all notes in sheet at once
     range.setNotes(notesArray.map(note => [note]))
