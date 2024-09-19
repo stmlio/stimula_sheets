@@ -337,7 +337,7 @@ function _getActiveTableName(url, token) {
     return name
 }
 
-function _makeHttpRequest(url, options, token = null) {
+function _makeHttpRequest(url, options = {}, token = null) {
     // Set default method
     const method = options.method || 'GET'
 
