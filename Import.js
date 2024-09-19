@@ -60,6 +60,8 @@ function createStmlSheet(stmlTemplateId, sampleDataRows) {
     fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows)
     tick('Filled STML sheet')
 
+    // set auto resize columns
+    stmlSheet.autoResizeColumns(1, 2);
 }
 
 function getStmlMapping(id) {
