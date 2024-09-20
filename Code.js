@@ -1,4 +1,4 @@
-const VERSION = '0.2'
+const VERSION = '0.3'
 
 function onOpen() {
     SpreadsheetApp
@@ -37,16 +37,58 @@ function doStandaloneConnect(url, params) {
     return JSON.parse(response);
 }
 
-function doOdooConnect(url, database, user, password) {
+function doOdooConnect(url, user, password) {
+
+    var stimulaUrl = null
+
+    // Strip the url to get protocol, host and port
+    const regex = /^(https?:\/\/[^\/]+)(?:\/|$)/;
+    const match = url.match(regex);
+
+    if (match) {
+        // try to connect, returns url
+        stimulaUrl = tryConnect(match[1])
+    }
+
+    if (!stimulaUrl) {
+        // assume it's an odoo.sh database name and try to connect again
+        stimulaUrl = tryConnect('https://' + url + '.dev.odoo.com')
+    }
+
+    if (!stimulaUrl) {
+        throw 'Invalid URL or database name'
+    }
+
+    // post without database, because on odoo.sh there's a single tenant
     const options = {
         "method": "post",
         "payload":
-            'database=' + encodeURIComponent(database) +
             '&username=' + encodeURIComponent(user) +
             '&password=' + encodeURIComponent(password)
     }
-    const response = _makeHttpRequest(url + '/auth', options)
+
+    const response = _makeHttpRequest(stimulaUrl + '/auth', options)
     return JSON.parse(response);
+}
+
+function tryConnect(odooUrl) {
+    // returns stimula URL if successful, throws exception if Odoo responds but stimula is not activated, null otherwise
+    try {
+        // try to connect to stimula
+        _makeHttpRequest(odooUrl + '/stimula/1.0/hello')
+    } catch (e) {
+        // if we can't connect, see if Odoo responds
+        try {
+            _makeHttpRequest(odooUrl + '/web/static/img/favicon.ico')
+            // report to the user that Odoo is running, but Stimula is not activated
+            throw 'Odoo is running, but Stimula is not activated'
+        } catch(e) {
+            // this URL doesn't work, return null
+            return null
+        }
+    }
+    // could connect, return stimula URL
+    return odooUrl + '/stimula/1.0'
 }
 
 function getTables(url, token, filter) {
@@ -337,7 +379,7 @@ function _getActiveTableName(url, token) {
     return name
 }
 
-function _makeHttpRequest(url, options, token = null) {
+function _makeHttpRequest(url, options = {}, token = null) {
     // Set default method
     const method = options.method || 'GET'
 
