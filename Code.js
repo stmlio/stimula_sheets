@@ -80,12 +80,12 @@ function tryConnect(odooUrl) {
         // if we can't connect, see if Odoo responds
         try {
             _makeHttpRequest(odooUrl + '/web/static/img/favicon.ico')
-            // report to the user that Odoo is running, but Stimula is not activated
-            throw 'Odoo is running, but Stimula is not activated'
         } catch(e) {
             // this URL doesn't work, return null
             return null
         }
+        // report to the user that Odoo is running, but Stimula is not activated
+        throw 'Odoo is running, but Stimula is not activated'
     }
     // could connect, return stimula URL
     return odooUrl + '/stimula/1.0'
