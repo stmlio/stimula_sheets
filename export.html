@@ -220,8 +220,8 @@
             <div class="tabs-content">
                 <div id="tab1" class="tab-content active">
                     <form id="odooConnectForm" onsubmit="submitOdooConnectForm(event)">
-                        <label for="odooDatabaseInput">Database Name:</label><br/>
-                        <input type="text" id="odooDatabaseInput" name="database" value="" class="full-width-input">
+                        <label for="odooUrlInput">Odoo URL:</label><br/>
+                        <input type="text" id="odooUrlInput" name="url" value="" class="full-width-input">
                         <br/>
                         <label for="odooUserInput">Odoo User:</label><br/>
                         <input type="text" id="odooUserInput" name="user" value="admin" class="full-width-input">
@@ -384,24 +384,23 @@
     // connect scripts
 
     function fillOdooConnectParameters() {
-        const db = localStorage.getItem("db");
+        const url = localStorage.getItem("url");
         const user = localStorage.getItem("user");
-        document.forms.odooConnectForm.odooDatabaseInput.value = db;
+        document.forms.odooConnectForm.odooUrlInput.value = url;
         document.forms.odooConnectForm.odooUserInput.value = user;
     }
 
     function submitOdooConnectForm(event) {
         event.preventDefault();
         localStorage.setItem("access_token", "");
-        const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+        const url = document.forms.odooConnectForm.odooUrlInput.value;
         const user = document.forms.odooConnectForm.odooUserInput.value;
         const password = document.forms.odooConnectForm.odooPasswordInput.value;
         // interestingly, you can always connect to an odoo.sh instance using <db>.dev.odoo.com, even a production database
         // this is nice, because we don't have to ask the user to enter the full URL
-        const url = 'https://' + db + '.dev.odoo.com/stimula/1.0'
         localStorage.setItem("url", url);
         console.log(url)
-        runWithLoader('doOdooConnect', onOdooConnectSuccess, url, db, user, password)
+        runWithLoader('doOdooConnect', onOdooConnectSuccess, url, user, password)
     }
 
     function submitStandaloneConnectForm(event) {
@@ -415,9 +414,9 @@
     function onOdooConnectSuccess(response) {
         var token = response['token']
         localStorage.setItem("access_token", token);
-        const db = document.forms.odooConnectForm.odooDatabaseInput.value;
+        const url = document.forms.odooConnectForm.odooUrlInput.value;
         const user = document.forms.odooConnectForm.odooUserInput.value;
-        localStorage.setItem("db", db);
+        localStorage.setItem("db", url);
         localStorage.setItem("user", user);
         toggleSection(1)
     }
