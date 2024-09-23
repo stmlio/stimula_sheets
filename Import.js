@@ -2,7 +2,7 @@ var startTime;
 
 function tick(message) {
     if (!startTime) {
-        Logger.log("Timer started.");
+        Logger.log(message + " - Timer started.");
         startTime = new Date();
         return;
     }
@@ -13,12 +13,75 @@ function tick(message) {
     Logger.log(message + " - Elapsed time: " + elapsedTime + " ms");
 }
 
-function createStmlSheet(sampleDataRows) {
-    // check that this is not an STML sheet
-    assert(!SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getRange(1, 1).getValue().startsWith('@'), 'This is already an STML sheet')
+function getStmlMappings() {
+    // skip if this is already an STML sheet
+    if (SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getRange(1, 1).getValue().startsWith('@')) {
+        return
+    }
+
     // get current active sheet
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
-    // get sheet name
+
+    // get header line values
+    const values = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()
+    const header = _convertDataRangeToCsv(values)
+
+    const options = {
+        method: 'post',
+        contentType: 'text/csv',
+        payload: header
+    }
+
+    response = _makeHttpRequest('https://api.stml.io/1.0/mappings', options)
+    Logger.log('mappings: ' + response)
+
+    return JSON.parse(response)
+}
+
+function createStmlSheet(stmlTemplateId, sampleDataRows) {
+    tick('createStmlSheet')
+    // get current active sheet
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
+    tick('Got active sheet')
+
+    // check that this is not an STML sheet
+    assert(!sheet.getRange(1, 1).getValue().startsWith('@'), 'This is already an STML sheet')
+    tick('Checked STML sheet')
+
+    // get mapping from api.stml.io
+    const mapping = getStmlMapping(stmlTemplateId)
+    tick('Got mapping')
+
+    // create blank STML sheet and make it active
+    const stmlSheet = createBlankStmlSheet(sheet);
+    tick('Created blank STML sheet')
+
+    // fill table with data
+    fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows)
+    tick('Filled STML sheet')
+
+    // set auto resize columns
+    stmlSheet.autoResizeColumns(1, 2);
+}
+
+function getStmlMapping(id) {
+
+    if (!id) {
+        Logger.log('No STML template provided, creating blank STML sheet')
+        return {}
+    }
+    try {
+        // retrieve mapping from api.stml.io
+        response = _makeHttpRequest('https://api.stml.io/1.0/mappings/' + id)
+
+        return JSON.parse(response)
+    } catch (e) {
+        Logger.log('Error fetching mapping, ID: ' + id + ', error: ' + e)
+        return {}
+    }
+}
+
+function createBlankStmlSheet(sheet) {
     const sheetName = sheet.getName()
     // start with empty suffix
     let suffix = ''
@@ -29,35 +92,55 @@ function createStmlSheet(sampleDataRows) {
     }
     // create new sheet with suffix
     const stmlSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(sheetName + suffix + '.stml')
-    // activate new sheet
-    SpreadsheetApp.setActiveSheet(stmlSheet)
-    // set cell A1 to '@source'
-    stmlSheet.getRange(1, 1).setValue('@source')
-    // set cell B1 to source sheet name
-    stmlSheet.getRange(1, 2).setValue(sheetName)
-    // set cell A2 to '@target'
-    stmlSheet.getRange(2, 1).setValue('@target')
-    // set cell A4 to 'source_column'
-    stmlSheet.getRange(4, 1).setValue('source_column')
-    // set cell B4 to 'target_column'
-    stmlSheet.getRange(4, 2).setValue('target_column')
-    // set cell C4 to 'unique'
-    stmlSheet.getRange(4, 3).setValue('unique')
-    // copy first row from source sheet
-    const sourceRange = sheet.getRange(1, 1, 1, sheet.getLastColumn())
-    // transpose and paste to STML sheet, starting at A5
-    sourceRange.copyTo(stmlSheet.getRange(5, 1), SpreadsheetApp.CopyPasteType.PASTE_NORMAL, true)
 
-    Logger.log('Sample data rows: ' + sampleDataRows)
-    if (sampleDataRows > 0) {
-        // copy sample data rows from source sheet
-        const sampleRange = sheet.getRange(2, 1, sampleDataRows, sheet.getLastColumn())
-        // transpose and paste to STML sheet, starting at E5
-        sampleRange.copyTo(stmlSheet.getRange(5, 5), SpreadsheetApp.CopyPasteType.PASTE_NORMAL, true)
-    }
-    //     freeze top four rows
+    // freeze rows
     stmlSheet.setFrozenRows(4)
 
+    return stmlSheet;
+}
+
+function fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows) {
+
+    const numberOfColumns = sheet.getLastColumn()
+
+    // initialize table to hold the data
+    const values = Array.from({length: numberOfColumns + 4}, () => Array.from({length: sampleDataRows + 4}, () => ''));
+
+    // meta data
+    values[0][0] = '@source'
+    values[0][1] = sheet.getName()
+    values[1][0] = '@target'
+    values[1][1] = mapping['target'] || ''
+    values[3][0] = 'source_column'
+    values[3][1] = 'target_column'
+
+    // read source data into array
+    const sourceData = sheet.getRange(1, 1, 1 + sampleDataRows, numberOfColumns).getValues()
+
+    // map source columns to target columns
+    if (mapping && mapping['columns']) {
+        column_map = mapping['columns'].reduce((acc, column) => {
+            acc[column['source']] = column['target'];
+            return acc
+        }, {})
+
+    } else {
+        column_map = {}
+    }
+
+    // fill source, target and sample data columns
+    for (let i = 0; i < numberOfColumns; i++) {
+        values[4 + i][0] = sourceData[0][i]
+        values[4 + i][1] = column_map[sourceData[0][i]] || ''
+
+        // copy sample data
+        for (let j = 0; j < sampleDataRows; j++) {
+            values[4 + i][4 + j] = sourceData[1 + j][i]
+        }
+    }
+
+    // copy target column names to STML sheet, in column B, starting at B5
+    stmlSheet.getRange(1, 1, numberOfColumns + 4, sampleDataRows + 4).setValues(values)
 }
 
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
@@ -267,7 +350,7 @@ function _findRow(allData, text) {
     for (let i = 0; i < allData.length; i++) {
         if (allData[i][0] === text) {
             // return header row number (0-indexed)
-            return i ;
+            return i;
         }
     }
     return -1
