@@ -103,8 +103,14 @@ function fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows) {
 
     const numberOfColumns = sheet.getLastColumn()
 
+    // get additional target columns without source column
+    const additionalColumns = mapping['columns'].filter(column => !column['source']).map(column => column['target'])
+
+    // get number of additional columns
+    const additionalColumnsCount = additionalColumns.length
+
     // initialize table to hold the data
-    const values = Array.from({length: numberOfColumns + 4}, () => Array.from({length: sampleDataRows + 4}, () => ''));
+    const values = Array.from({length: numberOfColumns + additionalColumnsCount + 4}, () => Array.from({length: sampleDataRows + 4}, () => ''));
 
     // meta data
     values[0][0] = '@source'
@@ -139,8 +145,13 @@ function fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows) {
         }
     }
 
+    // fill additional columns at the bottom of the target columns
+    additionalColumns.forEach((column, index) => {
+        values[4 + numberOfColumns + index][1] = column
+    })
+
     // copy target column names to STML sheet, in column B, starting at B5
-    stmlSheet.getRange(1, 1, numberOfColumns + 4, sampleDataRows + 4).setValues(values)
+    stmlSheet.getRange(1, 1, values.length, values[0].length).setValues(values)
 }
 
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
