@@ -11,6 +11,20 @@
             font-size: 14px;
         }
 
+        .button-test{
+            background-color: lightgreen;
+        }
+        .button-test:hover {
+            background-color: green;
+        }
+
+        button.button-import{
+            background-color: lightcoral;
+        }
+        .button-import:hover {
+            background-color: red;
+        }
+
         label {
             margin: 2px;
         }
@@ -315,9 +329,8 @@
             <br/><br/>
             <div id="selectedSheetsCount">Tables Selected</div>
             <br/>
-            <button id="evaluateTablesButton" onclick="callEvaluateTables()">Evaluate (no execute)</button>
-            <button id="dryRunTablesButton" onclick="callDryRunTables()">Dry Run (execute, rollback)</button>
-            <button id="commitTablesButton" onclick="callCommitTables()">Commit (execute, commit)</button>
+            <button id="dryRunTablesButton" onclick="callDryRunTables()" class="button-test">Test</button>
+            <button id="commitTablesButton" onclick="callCommitTables()" class="button-import">Import</button>
 
         </div>
     </div>
