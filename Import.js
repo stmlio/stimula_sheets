@@ -97,21 +97,16 @@ function updateStmlSheet(stmlTemplateId) {
     // set auto resize columns
     stmlSheet.autoResizeColumns(1, 2);
 
+    // create free sheet name
+    sheetName = createSheetName(mapping['short'], 'stml')
+
     // set sheet name
-    stmlSheet.setName(mapping['short'])
+    stmlSheet.setName(sheetName)
 }
 
 function createBlankStmlSheet(sheet) {
-    const sheetName = sheet.getName()
-    // start with empty suffix
-    let suffix = ''
-    // iterate over suffixes until free sheetname found
-    while (SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName + suffix + '.stml')) {
-        // increment suffix
-        suffix = (parseInt(suffix) || 0) + 1
-    }
-    // create new sheet with suffix
-    const stmlSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(sheetName + suffix + '.stml')
+    // create new sheet
+    const stmlSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet()
 
     // freeze rows
     stmlSheet.setFrozenRows(4)
@@ -220,6 +215,19 @@ function updateStmlValues(stmlSheet, mapping) {
 
     // copy target column names to STML sheet, in column B, starting at B1
     stmlSheet.getRange(1, 2, values.length, 1).setValues(values)
+}
+
+function createSheetName(name, extension) {
+    // start with empty suffix
+    let suffix = ''
+    // get active spreadsheet
+    const activeSpreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    // iterate over suffixes until free sheetname found
+    while (activeSpreadsheet.getSheetByName(name + suffix + '.' + extension)) {
+        // increment suffix
+        suffix = (parseInt(suffix) || 0) + 1
+    }
+    return name + suffix + '.' + extension
 }
 
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
