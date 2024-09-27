@@ -13,18 +13,25 @@ function tick(message) {
     Logger.log(message + " - Elapsed time: " + elapsedTime + " ms");
 }
 
-function getStmlMappings() {
-    // skip if this is already an STML sheet
-    if (SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getRange(1, 1).getValue().startsWith('@')) {
-        return
-    }
-
+function getStmlMappingsForActiveSheet() {
     // get current active sheet
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
 
-    // get header line values
-    const values = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()
-    const header = _convertDataRangeToCsv(values)
+    // skip if this is not an STML sheet
+    if (!sheet.getRange(1, 1).getValue().startsWith('@')) {
+        return
+    }
+
+    // get first column
+    const stmLData = sheet.getRange(1, 1, sheet.getLastRow(), 1).getValues()
+
+    // get mappings from api.stml.io
+    return getStmlMappings(stmLData)
+}
+
+function getStmlMappings(stmlData) {
+    // convert first column into a csv string
+    const header = stmlData.map(row => row[0]).join(', ')
 
     const options = {
         method: 'post',
@@ -38,47 +45,60 @@ function getStmlMappings() {
     return JSON.parse(response)
 }
 
-function createStmlSheet(stmlTemplateId, sampleDataRows) {
+function createStmlSheet(sampleDataRows) {
     tick('createStmlSheet')
     // get current active sheet
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
+    const sourceSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
     tick('Got active sheet')
 
-    // check that this is not an STML sheet
-    assert(!sheet.getRange(1, 1).getValue().startsWith('@'), 'This is already an STML sheet')
+    // assert that this is not an STML sheet
+    assert(!sourceSheet.getRange(1, 1).getValue().startsWith('@'), 'This is an STML sheet. First select a source sheet.')
     tick('Checked STML sheet')
+
+    // create blank STML sheet and make it active
+    const stmlSheet = createBlankStmlSheet(sourceSheet);
+    tick('Created blank STML sheet')
+
+    // fill table with data
+    stmlData = fillStmlValues(stmlSheet, sourceSheet, sampleDataRows)
+    tick('Filled STML sheet')
+
+    // set auto resize columns
+    stmlSheet.autoResizeColumns(1, 2);
+
+    // get mappings from api.stml.io
+    return getStmlMappings(stmlData)
+}
+
+
+function updateStmlSheet(stmlTemplateId) {
+    tick('createStmlSheet')
+    // get current active sheet
+    const stmlSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
+    tick('Got active sheet')
+
+    // assert that this is an STML sheet
+    assert(stmlSheet.getRange(1, 1).getValue().startsWith('@'), 'This is not STML sheet. First select an STML sheet.')
+    tick('Checked STML sheet')
+
+    // assert that STML template ID is provided
+    assert(stmlTemplateId, 'STML template ID is required to update existing STML sheet')
 
     // get mapping from api.stml.io
     const mapping = getStmlMapping(stmlTemplateId)
     tick('Got mapping')
 
-    // create blank STML sheet and make it active
-    const stmlSheet = createBlankStmlSheet(sheet);
-    tick('Created blank STML sheet')
+    // assert that mapping is not empty
+    assert(Object.keys(mapping).length > 0, 'No mapping found for ID: ' + stmlTemplateId)
 
-    // fill table with data
-    fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows)
-    tick('Filled STML sheet')
+    // update STML with mapping
+    updateStmlValues(stmlSheet, mapping)
 
     // set auto resize columns
     stmlSheet.autoResizeColumns(1, 2);
-}
 
-function getStmlMapping(id) {
-
-    if (!id) {
-        Logger.log('No STML template provided, creating blank STML sheet')
-        return {}
-    }
-    try {
-        // retrieve mapping from api.stml.io
-        response = _makeHttpRequest('https://api.stml.io/1.0/mappings/' + id)
-
-        return JSON.parse(response)
-    } catch (e) {
-        Logger.log('Error fetching mapping, ID: ' + id + ', error: ' + e)
-        return {}
-    }
+    // set sheet name
+    stmlSheet.setName(mapping['short'])
 }
 
 function createBlankStmlSheet(sheet) {
@@ -99,9 +119,65 @@ function createBlankStmlSheet(sheet) {
     return stmlSheet;
 }
 
-function fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows) {
+function fillStmlValues(stmlSheet, sourceSheet, sampleDataRows) {
 
-    const numberOfColumns = sheet.getLastColumn()
+    const numberOfColumns = sourceSheet.getLastColumn()
+
+    // initialize table to hold the data
+    const values = Array.from({length: numberOfColumns + 4}, () => Array.from({length: sampleDataRows + 4}, () => ''));
+
+    // meta data
+    values[0][0] = '@source'
+    values[0][1] = sourceSheet.getName()
+    values[1][0] = '@target'
+    values[3][0] = 'source_column'
+    values[3][1] = 'target_column'
+
+    // read source data into array
+    const sourceData = sourceSheet.getRange(1, 1, 1 + sampleDataRows, numberOfColumns).getValues()
+
+    // fill source, target and sample data columns
+    for (let i = 0; i < numberOfColumns; i++) {
+        values[4 + i][0] = sourceData[0][i]
+
+        // copy sample data
+        for (let j = 0; j < sampleDataRows; j++) {
+            values[4 + i][4 + j] = sourceData[1 + j][i]
+        }
+    }
+
+    // copy all data to STML sheet
+    stmlSheet.getRange(1, 1, values.length, values[0].length).setValues(values)
+
+    // return values, so we can use them to retrieve mappings
+    return values
+}
+
+
+function getStmlMapping(id) {
+
+    if (!id) {
+        Logger.log('No STML template provided, creating blank STML sheet')
+        return {}
+    }
+    try {
+        // retrieve mapping from api.stml.io
+        response = _makeHttpRequest('https://api.stml.io/1.0/mappings/' + id)
+
+        return JSON.parse(response)
+    } catch (e) {
+        Logger.log('Error fetching mapping, ID: ' + id + ', error: ' + e)
+        return {}
+    }
+}
+
+function updateStmlValues(stmlSheet, mapping) {
+
+    // read source and target columns from STML into array
+    const stmlData = stmlSheet.getRange(1, 1, stmlSheet.getLastRow(), 2).getValues()
+
+    // find last row with data in column A, subtract 4 to get the last column index, add one to get the number of columns
+    const numberOfColumns = Math.max(...Array.from(stmlData, (e, i) => e[0] ? i : 0)) - 4 + 1
 
     // get additional target columns without source column
     const additionalColumns = mapping['columns'].filter(column => !column['source']).map(column => column['target'])
@@ -109,19 +185,16 @@ function fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows) {
     // get number of additional columns
     const additionalColumnsCount = additionalColumns.length
 
+    // take sufficient length to overwrite existing values
+    const max_length = Math.max(stmlData.length, 4 + numberOfColumns + additionalColumnsCount)
+
     // initialize table to hold the data
-    const values = Array.from({length: numberOfColumns + additionalColumnsCount + 4}, () => Array.from({length: sampleDataRows + 4}, () => ''));
+    const values = Array.from({length: max_length}, () => Array.from({length: 1}, () => ''));
 
-    // meta data
-    values[0][0] = '@source'
-    values[0][1] = sheet.getName()
-    values[1][0] = '@target'
-    values[1][1] = mapping['target'] || ''
+    // copy and set source and target etc.
+    values[0][0] = stmlData[0][1]
+    values[1][0] = mapping['target'] || ''
     values[3][0] = 'source_column'
-    values[3][1] = 'target_column'
-
-    // read source data into array
-    const sourceData = sheet.getRange(1, 1, 1 + sampleDataRows, numberOfColumns).getValues()
 
     // map source columns to target columns
     if (mapping && mapping['columns']) {
@@ -136,22 +209,17 @@ function fillStmlValues(stmlSheet, sheet, mapping, sampleDataRows) {
 
     // fill source, target and sample data columns
     for (let i = 0; i < numberOfColumns; i++) {
-        values[4 + i][0] = sourceData[0][i]
-        values[4 + i][1] = column_map[sourceData[0][i]] || ''
-
-        // copy sample data
-        for (let j = 0; j < sampleDataRows; j++) {
-            values[4 + i][4 + j] = sourceData[1 + j][i]
-        }
+        // map source column to target column
+        values[4 + i][0] = column_map[stmlData[4+i][0]] || ''
     }
 
     // fill additional columns at the bottom of the target columns
     additionalColumns.forEach((column, index) => {
-        values[4 + numberOfColumns + index][1] = column
+        values[4 + numberOfColumns + index][0] = column
     })
 
-    // copy target column names to STML sheet, in column B, starting at B5
-    stmlSheet.getRange(1, 1, values.length, values[0].length).setValues(values)
+    // copy target column names to STML sheet, in column B, starting at B1
+    stmlSheet.getRange(1, 2, values.length, 1).setValues(values)
 }
 
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {

@@ -287,15 +287,19 @@
     <div class="section">
         <div class="header" onclick="toggleSection(1)">STML</div>
         <div class="content" id="section1">
+            <!-- Create STML Sheet -->
+            <label for="sampleDataRows">Number of sample data rows to include:</label>
+            <input type="number" id="sampleDataRows" name="numberInput" value="1" min="0" step="1" />
+            <br/>
+            <button id="createStmlButton" onclick="callCreateStml()">Create STML Sheet</button>
+            <br/><br/>
             <!-- drop down for STML template -->
             <label for="stmlTemplate">Default Mapping:</label><br/>
             <select id="stmlTemplate" name="stmlTemplate">
                 <option>Choose</option>
-            </select><br/>
+            </select><br/><br/>
+            <button id="updateStmlButton" onclick="callUpdateStml()">Update STML Sheet</button>
             <br/>
-            <label for="sampleDataRows">Number of sample data rows to include:</label>
-            <input type="number" id="sampleDataRows" name="numberInput" value="1" min="0" step="1" />
-            <button id="createStmlButton" onclick="callCreateStml()">Create STML Sheet</button>
         </div>
     </div>
 
@@ -433,10 +437,10 @@
         const select = document.getElementById('stmlTemplate')
         select.innerHTML = '<option>Choose</option>'
 
-        runWithLoader('getStmlMappings', onStmlRetrieved)
+        runWithLoader('getStmlMappingsForActiveSheet', fillStmlDropdown)
     }
 
-    function onStmlRetrieved(response) {
+    function fillStmlDropdown(response) {
         console.log(response)
         // fill the dropdown with the mappings
         const select = document.getElementById('stmlTemplate')
@@ -451,16 +455,26 @@
     }
 
     function callCreateStml() {
-        const stmlTemplate = document.getElementById('stmlTemplate').value
         const sampleDataRows = document.getElementById('sampleDataRows').value
-        runWithLoader('createStmlSheet', onStmlCreated, stmlTemplate, sampleDataRows)
+        runWithLoader('createStmlSheet', onStmlCreated, sampleDataRows)
     }
 
     function onStmlCreated(response) {
         console.log(response)
-        displayMessage({short: 'STML Sheet Created', msg: 'STML Sheet created successfully.'})
-        toggleSection(2)
+        displayMessage({short: 'STML Sheet Created', msg: 'STML sheet created successfully.'})
+        fillStmlDropdown(response)
     }
+
+    function callUpdateStml() {
+        const stmlTemplate = document.getElementById('stmlTemplate').value
+        runWithLoader('updateStmlSheet', onStmlUpdated, stmlTemplate)
+    }
+
+    function onStmlUpdated(response) {
+        console.log(response)
+        displayMessage({short: 'STML Sheet Updated', msg: 'STML sheet updated successfully.'})
+    }
+
 </script>
 
 
