@@ -249,7 +249,6 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
     // resolve table names
     const tables = _getTableNames(sheets)
 
-
     const url = baseUrl + '/tables?style=full&t=' + tables.join(',') + (isInsert ? '&insert=true' : '') + (isUpdate ? '&update=true' : '') + (isDelete ? '&delete=true' : '') + (isExecute ? '&execute=true' : '') + (isCommit ? '&commit=true' : '')
     // create multipart request
     const multipartData = createMultipartBody(files);
@@ -323,10 +322,7 @@ function _exportSheets(sheets) {
                 name: `${sourceSheet.getName()}.csv`, mimeType: 'text/csv', content: contentWithHeader
             };
         } else {
-            const content = _getSheetAsCsv(sheet);
-            return {
-                name: `${sheet.getName()}.csv`, mimeType: 'text/csv', content: content
-            };
+            // skip non-STML sheets. Prettier solution is to send all files and let the server decide.
         }
     });
 
