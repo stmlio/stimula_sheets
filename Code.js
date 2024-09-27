@@ -1,4 +1,4 @@
-const VERSION = '0.3'
+const VERSION = '0.4'
 
 function onOpen() {
     SpreadsheetApp
@@ -67,8 +67,14 @@ function doOdooConnect(url, user, password) {
             '&password=' + encodeURIComponent(password)
     }
 
+    // Stimula API returns JSON string with token
     const response = _makeHttpRequest(stimulaUrl + '/auth', options)
-    return JSON.parse(response);
+
+    // parse JSON string
+    parsed_response = JSON.parse(response);
+
+    // also return the stimula URL
+    return {token: parsed_response.token, stimulaUrl: stimulaUrl};
 }
 
 function tryConnect(odooUrl) {
@@ -408,13 +414,20 @@ function _makeHttpRequest(url, options = {}, token = null) {
     // Check the HTTP response code
     var statusCode = response.getResponseCode();
 
+    // Get the response body
+    const responseBody = response.getContentText()
+
     // Check if the response code indicates an error (e.g., 4xx or 5xx)
     if (statusCode >= 400) {
-        // Get the response body
-        var responseBody = response.getContentText();
-
         // Throw an exception with the response body as the error message
         throw responseBody;
+    }
+
+    // truncate long payloads
+    if (responseBody.length > 1000) {
+        Logger.log(responseBody.substring(0, 1000) + '...')
+    } else {
+        Logger.log(responseBody)
     }
 
     // If the response code is not an error, return the response
