@@ -385,10 +385,10 @@
         const url = document.forms.odooConnectForm.odooUrlInput.value;
         const user = document.forms.odooConnectForm.odooUserInput.value;
         const password = document.forms.odooConnectForm.odooPasswordInput.value;
-        // interestingly, you can always connect to an odoo.sh instance using <db>.dev.odoo.com, even a production database
-        // this is nice, because we don't have to ask the user to enter the full URL
+
+        // save values to local storage, so we can reconstruct them if the page is refreshed
         localStorage.setItem("url", url);
-        console.log(url)
+        localStorage.setItem("user", user);
         runWithLoader('doOdooConnect', onOdooConnectSuccess, url, user, password)
     }
 
@@ -401,12 +401,14 @@
     }
 
     function onOdooConnectSuccess(response) {
-        var token = response['token']
+        // copy token to local storage
+        const token = response['token']
         localStorage.setItem("access_token", token);
-        const url = document.forms.odooConnectForm.odooUrlInput.value;
-        const user = document.forms.odooConnectForm.odooUserInput.value;
-        localStorage.setItem("db", url);
-        localStorage.setItem("user", user);
+
+        // copy the stimula URL to local storage
+        const stimulaUrl = response['stimulaUrl']
+        localStorage.setItem("url", stimulaUrl);
+
         toggleSection(1)
     }
 
