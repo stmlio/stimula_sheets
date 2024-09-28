@@ -12,17 +12,17 @@
         }
 
         .button-test{
-            background-color: lightgreen;
+            background-color: #FFC;
         }
         .button-test:hover {
-            background-color: green;
+            background-color: #FF8;
         }
 
         button.button-import{
-            background-color: lightcoral;
+            background-color: #9F9;
         }
         .button-import:hover {
-            background-color: red;
+            background-color: #6F6;
         }
 
         label {
@@ -311,8 +311,7 @@
                 <table>
                     <thead>
                     <tr>
-                        <th><input type="checkbox" onclick="selectAllSheets(this)"/></th>
-                        <th>File</th>
+                        <th><input type="checkbox" onclick="selectAllSheets(this)"/>  File</th>
                     </tr>
                     </thead>
                     <tbody id="sheets-tbody">
@@ -586,50 +585,60 @@
         //   log summary
         console.log(summary);
 
-        const errorMessage = createErrorMessage(summary)
+        const message = createSummaryMessage(summary)
+        console.log(message);
 
-        if (errorMessage) {
-            displayError(errorMessage)
+        if (message.error) {
+            displayError({'message': message})
         } else {
-            const successMessage = createSuccessMessage(summary)
-            displayMessage(successMessage)
+            displayMessage(message)
         }
     }
 
-    function createErrorMessage(summary) {
-        const failed = summary.failed
-        if (failed) {
-            const total = failed.update + failed.insert + failed.delete
-            if (total === 0) {
-                return null
-            }
+    function createSummaryMessage(summary) {
+        const commit = summary.commit
+        const operations = summary.total.operations
+        const failed = summary.total.failed
 
-            const type = 'SQL Error'
-            const short = 'Failed to process ' + total + ' records.'
-            const msg = 'Failed to update ' + failed.update + ' records, to insert ' + failed.insert + ' records, and to delete ' + failed.delete + ' records.'
-            return {message: {type: type, short: short, msg: msg}}
+        const result = {
+            'error': failed > 0,
+            'type': 'Error',
         }
-        return null
+
+        // short message
+        result.short = (commit ? 'Imported ': 'Tested ') + operations + ' records, ' + (failed == 0 ? 'no' : failed) + ' errors.'
+
+        // detailed message
+        var msg = 'Processed ' + operations + ' records'
+        totals = []
+        if (summary.total.insert > 0)
+            totals.push('  ' + summary.total.insert + ' inserts')
+        if (summary.total.update > 0)
+            totals.push('  ' + summary.total.update + ' updates')
+        if (summary.total.delete > 0)
+            totals.push('  ' + summary.total.delete + ' deletes')
+        if (totals.length > 0) {
+            msg += ': \n' + totals.join()
+        } else {
+            msg += '.'
+        }
+
+        const totals_failed = []
+        // report failed errors
+        if (summary.failed.insert > 0)
+            totals_failed.push('  ' + summary.failed.insert + ' not inserted')
+        if (summary.failed.update > 0)
+            totals_failed.push('  ' + summary.failed.update + ' not updated')
+        if (summary.failed.delete > 0)
+            totals_failed.push('  ' + summary.failed.delete + ' not deleted')
+        if (totals_failed.length > 0) {
+            msg += '\n\nFailed ' + failed + ' records: \n' + totals_failed.join()
+        }
+
+        result.msg = msg
+
+       return result
     }
-
-    function createSuccessMessage(summary) {
-        if (!summary.execute) {
-            const total = summary.found.update + summary.found.insert + summary.found.delete
-            const short = 'Evaluated ' + total + ' records.'
-            const msg = 'Evaluated ' + summary.found.update + ' records to update, ' + summary.found.insert + ' records to insert, and ' + summary.found.delete + ' records to delete.'
-            return {short: short, msg: msg}
-        }
-        const total = summary.success.update + summary.success.insert + summary.success.delete
-        if (!summary.commit) {
-            const short = 'Completed dry-run for ' + total + ' records.'
-            const msg = 'Completed dry-run for ' + summary.success.update + ' records to update, ' + summary.success.insert + ' records to insert, and ' + summary.success.delete + ' records to delete.'
-            return {short: short, msg: msg}
-        }
-        const short = 'Committed ' + total + ' records.'
-        const msg = 'Committed ' + summary.success.update + ' records to update, ' + summary.success.insert + ' records to insert, and ' + summary.success.delete + ' records to delete.'
-        return {short: short, msg: msg}
-    }
-
 </script>
 
 <!-- Common scripts   -->

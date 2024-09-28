@@ -236,6 +236,9 @@ function createSheetName(name, extension) {
 }
 
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
+    // raise error if no sheets are selected
+    assert(sheetNames.length > 0, 'No sheets selected')
+
     // log sheet names
     Logger.log('Exporting sheets: ' + sheetNames.join(','))
     tick('Start')
@@ -296,12 +299,10 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
 
     // log max 3 rows
     Logger.log(result['rows'].slice(0, 3))
-
     tick('Parsed response')
 
     // display line-by-line feedback in sheets
-    _displayMultiPostFullReport(result['rows'], sourceSheets, isExecute)
-
+    _displayMultiPostFullReport(result, sourceSheets)
     tick('Displayed results')
 
     // return summary for the front-end to display
@@ -323,7 +324,7 @@ function _getStmlSheets(sheets) {
 }
 
 function _getCsvSheet(sheets, stmlSheets, sourceSheets) {
-    // return sheets that are not STML sheets and not source sheets
+    // return sheets that are not STML sheets and not source sheets. Compare sheets by ID, not by object reference.
     return sheets.filter(sheet =>
         !stmlSheets.some(s => s.id === sheet.id) &&
         !sourceSheets.some(s => s.id === sheet.id)
@@ -550,9 +551,22 @@ function _clearPostResult(sheet) {
 }
 
 
-function _displayMultiPostFullReport(rows, sheets, isExecute) {
+function _displayMultiPostFullReport(report, sheets) {
+    // test or committed?
+    const isCommit = report['summary']['commit']
+    const rows = report['rows']
+
+    // the same sheet may appear multiple times, so we need to remove duplicates. First create a map from sheet ID to sheet.
+    const sheetMap = sheets.reduce((acc, sheet) => {
+        acc[sheet.id] = sheet
+        return acc
+    }, {})
+
+    // then get the map's values
+    const uniqueSheets = Object.values(sheetMap)
+
     //     iterate over sheets
-    sheets.forEach(sheet => {
+    uniqueSheets.forEach(sheet => {
         // log sheetname
         Logger.log('Displaying sheet: ' + sheet.getName())
         // filter rows for this sheet
@@ -564,7 +578,7 @@ function _displayMultiPostFullReport(rows, sheets, isExecute) {
         // logger row count
         Logger.log('Rows: ' + sheetRows.length)
         // display background color in rows
-        _displayBackgroundColor(sheetRows, sheet, isExecute)
+        _displayBackgroundColor(sheetRows, sheet, isCommit)
 
         tick('Displayed background color')
 
@@ -572,12 +586,11 @@ function _displayMultiPostFullReport(rows, sheets, isExecute) {
         _displayNotes(sheetRows, sheet)
 
         tick('Displayed notes')
-
     })
 
 }
 
-function _displayBackgroundColor(rows, sheet, isExecute) {
+function _displayBackgroundColor(rows, sheet, isCommit) {
 
     // get range of successful rows. Undefined also means success.
     let successRange = rows.filter(row => row.success === undefined || row.success).map(r => r.line_number).filter(l => !isNaN(l)).map(l => parseInt(l) + 2).map(l => l + ':' + l)
@@ -585,16 +598,20 @@ function _displayBackgroundColor(rows, sheet, isExecute) {
     // get range of failed rows
     let failedRange = rows.filter(row => row.success !== undefined && !row.success).map(r => r.line_number).filter(l => !isNaN(l)).map(l => parseInt(l) + 2).map(l => l + ':' + l)
 
+    // same row may appear multiple times, so we need to remove duplicates. Also remove failed rows from success range
+    successRange = Array.from(new Set(successRange.filter(l => !failedRange.includes(l))) )
+    failedRange = Array.from(new Set(failedRange))
+
     // set background color. For some odd reason a rangelist must not be empty.
     if (successRange.length > 0) {
         // bright green for execute, light green for evaluate
-        const color = isExecute ? '#44FF44' : '#AAFFAA'
+        const color = isCommit ? '#9F9' : '#FFC'
         sheet.getRangeList(successRange).setBackground(color)
     }
 
     // red for failed
     if (failedRange.length > 0) {
-        sheet.getRangeList(failedRange).setBackground('#FF4444')
+        sheet.getRangeList(failedRange).setBackground('#F99')
     }
 }
 
@@ -610,9 +627,13 @@ function _displayNotes(rows, sheet) {
     rows.filter(row => !isNaN(row.line_number)).forEach(row => {
         // parse line number to get 0-indexed line number
         const lineNumber = parseInt(row.line_number)
+        const newLines = notesArray[lineNumber] ? '\n\n' : ''
+        const error = row.error ? 'Error: ' + row.error + '\n\n' : ''
+        const query = row.query ? 'Query: ' + row.query + '\n\n': ''
+        const params = row.params ? 'Params: ' + JSON.stringify(row.params, null, 2) : ''
 
-        // format error
-        notesArray[lineNumber] = (row.error ? 'Error: ' + row.error + '\n\n' : '') + row.query + '\n\n' + JSON.stringify(row.params, null, 2)
+        // Append to existing note. There may be multiple notes for the same line.
+        notesArray[lineNumber] += newLines + error + query + params
     })
 
     // set all notes in sheet at once
