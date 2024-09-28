@@ -48,11 +48,17 @@ function getStmlMappings(stmlData) {
 function createStmlSheet(sampleDataRows) {
     tick('createStmlSheet')
     // get current active sheet
-    const sourceSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
+    let sourceSheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet()
     tick('Got active sheet')
 
-    // assert that this is not an STML sheet
-    assert(!sourceSheet.getRange(1, 1).getValue().startsWith('@'), 'This is an STML sheet. First select a source sheet.')
+    // check if this is an STML sheet
+    if (sourceSheet.getRange(1, 1).getValue().startsWith('@')) {
+        // get sheet from source name
+        const sourceName = sourceSheet.getRange(1, 2).getValue()
+
+        // change source sheet to the one with the source name
+        sourceSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sourceName)
+    }
     tick('Checked STML sheet')
 
     // create blank STML sheet and make it active
@@ -116,6 +122,12 @@ function createBlankStmlSheet(sheet) {
     // activate sheet
     SpreadsheetApp.setActiveSheet(stmlSheet)
 
+    // find free sheet name based on source sheet name
+    const sheetName = createSheetName(sheet.getName(), 'stml')
+
+    // set sheet name
+    stmlSheet.setName(sheetName)
+
     return stmlSheet;
 }
 
@@ -124,7 +136,7 @@ function fillStmlValues(stmlSheet, sourceSheet, sampleDataRows) {
     const numberOfColumns = sourceSheet.getLastColumn()
 
     // initialize table to hold the data
-    const values = Array.from({length: numberOfColumns + 4}, () => Array.from({length: sampleDataRows + 4}, () => ''));
+    const values = Array.from({length: numberOfColumns + 4}, () => Array.from({length: sampleDataRows + 2}, () => ''));
 
     // meta data
     values[0][0] = '@source'
@@ -142,12 +154,17 @@ function fillStmlValues(stmlSheet, sourceSheet, sampleDataRows) {
 
         // copy sample data
         for (let j = 0; j < sampleDataRows; j++) {
-            values[4 + i][4 + j] = sourceData[1 + j][i]
+            values[4 + i][2 + j] = sourceData[1 + j][i]
         }
     }
 
     // copy all data to STML sheet
     stmlSheet.getRange(1, 1, values.length, values[0].length).setValues(values)
+
+    // set text wrapping to clip for all sample data columns
+    if (sampleDataRows > 0) {
+        stmlSheet.getRange(5, 3, numberOfColumns, sampleDataRows).setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+    }
 
     // return values, so we can use them to retrieve mappings
     return values
