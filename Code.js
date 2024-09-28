@@ -1,4 +1,4 @@
-const VERSION = '0.4'
+const VERSION = '1.0'
 
 function onOpen() {
     SpreadsheetApp
