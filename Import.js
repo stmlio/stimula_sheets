@@ -97,11 +97,13 @@ function updateStmlSheet(stmlTemplateId) {
     // set auto resize columns
     stmlSheet.autoResizeColumns(1, 2);
 
-    // create free sheet name
-    sheetName = createSheetName(mapping['short'], 'stml')
-
-    // set sheet name
-    stmlSheet.setName(sheetName)
+    // we may have renamed the sheet already, so skip if it already looks fine
+    if (!stmlSheet.getName().startsWith(mapping['short'])) {
+        // create free sheet name
+        sheetName = createSheetName(mapping['short'], 'stml')
+        // set sheet name
+        stmlSheet.setName(sheetName)
+    }
 }
 
 function createBlankStmlSheet(sheet) {
@@ -110,6 +112,9 @@ function createBlankStmlSheet(sheet) {
 
     // freeze rows
     stmlSheet.setFrozenRows(4)
+
+    // activate sheet
+    SpreadsheetApp.setActiveSheet(stmlSheet)
 
     return stmlSheet;
 }
@@ -189,7 +194,7 @@ function updateStmlValues(stmlSheet, mapping) {
     // copy and set source and target etc.
     values[0][0] = stmlData[0][1]
     values[1][0] = mapping['target'] || ''
-    values[3][0] = 'source_column'
+    values[3][0] = 'target_column'
 
     // map source columns to target columns
     if (mapping && mapping['columns']) {
@@ -233,25 +238,41 @@ function createSheetName(name, extension) {
 function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpdate, isDelete, isExecute, isCommit) {
     // log sheet names
     Logger.log('Exporting sheets: ' + sheetNames.join(','))
-
     tick('Start')
 
     // get sheets
     const sheets = _getSheets(sheetNames)
-
     tick('Got sheets')
+    Logger.log('Got sheets: ' + sheets.map(sheet => sheet.getName()))
 
-    // convert source sheets to csv files
-    const files = _exportSheets(sheets)
+    // find STML sheets
+    const stmlSheets = _getStmlSheets(sheets)
+    Logger.log('STML sheets: ' + stmlSheets.map(sheet => sheet.getName()))
 
+    // map to source sheets
+    const sourceSheets = _getSourceSheets(stmlSheets)
+    Logger.log('Source sheets: ' + sourceSheets.map(sheet => sheet.getName()))
+
+    // get csv files by removing source sheets from original list
+    const csvSheets = _getCsvSheet(sheets, stmlSheets, sourceSheets)
+    Logger.log('CSV sheets: ' + csvSheets.map(sheet => sheet.getName()))
+
+    // create mime objects for stml sheets
+    const stmlFiles = _exportStmlSheets(stmlSheets, sourceSheets)
     tick('Exported sheets')
+    Logger.log('Exported STML sheets: ' + stmlFiles.map(file => file.name))
 
-    // resolve table names
-    const tables = _getTableNames(sheets)
+    // create mime objects for csv sheets
+    const csvFiles = _exportCsvSheets(csvSheets)
+    Logger.log('Exported CSV sheets: ' + csvFiles.map(file => file.name))
+
+    // resolve table names for all sheets
+    const tables = _getTableNames(stmlSheets.concat(csvSheets))
+    Logger.log('Tables: ' + tables)
 
     const url = baseUrl + '/tables?style=full&t=' + tables.join(',') + (isInsert ? '&insert=true' : '') + (isUpdate ? '&update=true' : '') + (isDelete ? '&delete=true' : '') + (isExecute ? '&execute=true' : '') + (isCommit ? '&commit=true' : '')
     // create multipart request
-    const multipartData = createMultipartBody(files);
+    const multipartData = createMultipartBody(stmlFiles.concat(csvFiles));
     const options = {
         method: 'POST',
         contentType: `multipart/form-data; boundary=${multipartData.boundary}`,
@@ -259,13 +280,12 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
         muteHttpExceptions: true
     };
 
-    // get source sheets to update results in
-    const sourceSheets = _getSourceSheets(sheets)
-
-    Logger.log('Clear source sheets: ' + sourceSheets)
+    // get source and CSV sheets to update results in
+    const sheetsToFormat = sourceSheets.concat(csvSheets)
+    Logger.log('Sheets to format: ' + sheetsToFormat.map(sheet => sheet.getName()))
 
     // clear formatting
-    _clearMultiPostResult(sourceSheets)
+    _clearMultiPostResult(sheetsToFormat)
 
     response = _makeHttpRequest(url, options, token)
 
@@ -298,50 +318,48 @@ function _getSheets(sheetNames) {
     })
 }
 
-
-function _exportSheets(sheets) {
-    // Prepare the files to be sent
-    const files = sheets.map(sheet => {
-        // log sheet name
-        Logger.log('Exporting sheet: ' + sheet.getName())
-
-        // check if it's an STML sheet, then cell A1 starts with '@'
-        if (sheet.getRange(1, 1).getValue().startsWith('@')) {
-            // get source sheet
-            const sourceSheet = _getSourceSheet(sheet);
-
-            tick('Got source sheet')
-
-            // get STML map and list
-            const stml = _getSheetAsStml(sheet);
-
-            // replace header line with STML
-            const contentWithHeader = _getSheetAsCsvWithStml(sourceSheet, stml);
-
-            return {
-                name: `${sourceSheet.getName()}.csv`, mimeType: 'text/csv', content: contentWithHeader
-            };
-        } else {
-            // skip non-STML sheets. Prettier solution is to send all files and let the server decide.
-        }
-    });
-
-    return files
+function _getStmlSheets(sheets) {
+    return sheets.filter(sheet => sheet.getRange(1, 1).getValue().startsWith('@'))
 }
 
-function _getSourceSheets(sheets) {
-    // get list of source sheets that contain the actual data to display results in
-    const sourceSheets = sheets.map(sheet => {
-        // check if it's an STML sheet, then cell A1 starts with '@'
-        if (sheet.getRange(1, 1).getValue().startsWith('@')) {
-            // get source sheet
-            return _getSourceSheet(sheet);
-        } else {
-            return sheet
-        }
-    });
+function _getCsvSheet(sheets, stmlSheets, sourceSheets) {
+    // return sheets that are not STML sheets and not source sheets
+    return sheets.filter(sheet =>
+        !stmlSheets.some(s => s.id === sheet.id) &&
+        !sourceSheets.some(s => s.id === sheet.id)
+    );}
+function _exportStmlSheets(stmlSheets, sourceSheets) {
 
-    return sourceSheets
+    // get mime object for STML sheets
+    return stmlSheets.map((stmlSheet, index)=> {
+        // get source sheet
+        const sourceSheet = sourceSheets[index];
+
+        // get STML map and list
+        const stml = _getSheetAsStml(stmlSheet);
+
+        // replace header line with STML
+        const contentWithHeader = _getSheetAsCsvWithStml(sourceSheet, stml);
+
+        // return mime object
+        return {
+            name: `${sourceSheet.getName()}.csv`, mimeType: 'text/csv', content: contentWithHeader
+        }
+    })
+}
+function _exportCsvSheets(csvSheets) {
+    // get mime object for csv sheets
+    return csvSheets.map(sheet => {
+        const content = _getSheetAsCsv(sheet);
+        return {
+            name: `${sheet.getName()}.csv`, mimeType: 'text/csv', content: content
+        };
+    })
+}
+
+function _getSourceSheets(stmlSheets) {
+    // get list of source sheets that contain the actual data to display results in
+    return  stmlSheets.map(sheet => _getSourceSheet(sheet))
 }
 
 
