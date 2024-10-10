@@ -1,4 +1,4 @@
-const VERSION = '1.0'
+const VERSION = '1.1.1'
 
 function onOpen() {
     SpreadsheetApp
@@ -247,30 +247,30 @@ function _getCurrentHeader() {
     }
 
     // get number of columns
-    const columns = sheet.getLastColumn()
+    const columnCount = sheet.getLastColumn()
 
-    // Get the data from the first row (assuming headers are in the first row)
-    let firstRowData = ''
-    if (columns > 0) {
-        const values = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-        // Convert the first row to CSV format
-        var csvRow = values.map(cell => {
-            // Escape double quotes by doubling them
-            if (typeof cell === 'string' && cell.includes('"')) {
-                cell = cell.replace(/"/g, '""');
-            }
-            // Wrap cell in double quotes if it contains commas or double quotes
-            if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
-                cell = `"${cell}"`;
-            }
-            return cell;
-        }).join(',');
+    // getRange() doesn't like empty ranges
+    if (columnCount === 0) {
+        return ''
     }
 
-    // convert to URL safe string
-    encodedString = encodeURIComponent(csvRow)
+    // Get the data from the first row (assuming headers are in the first row)
+    const values = sheet.getRange(1, 1, 1, columnCount).getValues()[0];
+    // Convert the first row to CSV format
+    const csvRow = values.map(cell => {
+        // Escape double quotes by doubling them
+        if (typeof cell === 'string' && cell.includes('"')) {
+            cell = cell.replace(/"/g, '""');
+        }
+        // Wrap cell in double quotes if it contains commas or double quotes
+        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+            cell = `"${cell}"`;
+        }
+        return cell;
+    }).join(',');
 
-    return encodedString
+    // convert to URL safe string
+    return encodeURIComponent(csvRow)
 }
 
 
