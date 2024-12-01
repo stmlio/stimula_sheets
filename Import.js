@@ -273,6 +273,13 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
     const sourceSheets = _getSourceSheets(stmlSheets)
     Logger.log('Source sheets: ' + sourceSheets.map(sheet => sheet.getName()))
 
+    // map to substitution sheets
+    const substitutionSheets = _getSubstitutionSheets(stmlSheets)
+    Logger.log('Substitution sheets: ' + substitutionSheets.map(sheet => sheet.getName()))
+
+    // only support zero or one substitution sheet. List sheets by name.
+    assert(substitutionSheets.length <= 1, 'Only zero or one substitution sheet is supported. Found: ' + substitutionSheets.map(sheet => sheet.getName()))
+
     // get csv files by removing source sheets from original list
     const csvSheets = _getCsvSheet(sheets, stmlSheets, sourceSheets)
     Logger.log('CSV sheets: ' + csvSheets.map(sheet => sheet.getName()))
@@ -286,13 +293,17 @@ function postMultiTable(baseUrl, token, sheetNames, whereClause, isInsert, isUpd
     const csvFiles = _exportCsvSheets(csvSheets)
     Logger.log('Exported CSV sheets: ' + csvFiles.map(file => file.name))
 
+    // create mime object for substitution sheets (zero or one)
+    const substitutionFiles = _exportSubstitutionsSheets(substitutionSheets)
+    Logger.log('Exported substitution sheets: ' + substitutionFiles.map(file => file.name))
+
     // resolve table names for all sheets
     const tables = _getTableNames(stmlSheets.concat(csvSheets))
     Logger.log('Tables: ' + tables)
 
     const url = baseUrl + '/tables?style=full&t=' + tables.join(',') + (isInsert ? '&insert=true' : '') + (isUpdate ? '&update=true' : '') + (isDelete ? '&delete=true' : '') + (isExecute ? '&execute=true' : '') + (isCommit ? '&commit=true' : '')
     // create multipart request
-    const multipartData = createMultipartBody(stmlFiles.concat(csvFiles));
+    const multipartData = createMultipartBody(stmlFiles.concat(csvFiles).concat(substitutionFiles));
     const options = {
         method: 'POST',
         contentType: `multipart/form-data; boundary=${multipartData.boundary}`,
@@ -374,6 +385,18 @@ function _exportCsvSheets(csvSheets) {
         };
     })
 }
+function _exportSubstitutionsSheets(csvSheets) {
+    // can only send zero or one substitution sheets, for now
+    assert (csvSheets.length <= 1, 'Only zero or one substitution sheet is supported. Found: ' + csvSheets.map(sheet => sheet.getName()))
+    // get mime object for csv sheets
+    return csvSheets.map(sheet => {
+        const content = _getSheetAsCsv(sheet);
+        return {
+            // name must be substitutions.csv
+            name: `substitutions.csv`, mimeType: 'text/csv', content: content
+        };
+    })
+}
 
 function _getSourceSheets(stmlSheets) {
     // get list of source sheets that contain the actual data to display results in
@@ -393,6 +416,27 @@ function _getSourceSheet(sheet) {
     // assert source sheet exists
     assert(sourceSheet, 'Source sheet ' + sourceName + ' does not exist')
     return sourceSheet
+}
+
+function _getSubstitutionSheets(stmlSheets) {
+    // return the list of non-empty substitution sheets
+    return stmlSheets.map(sheet => _getSubstitutionSheet(sheet)).filter(sheet => sheet)
+}
+
+function _getSubstitutionSheet(sheet) {
+    // if A3 equals '@substitutions', and B3 is not empty, then return the sheet with that name
+    if (sheet.getRange(3, 1).getValue() === '@substitutions') {
+        const substitutionName = sheet.getRange(3, 2).getValue()
+        if (substitutionName) {
+            // find the sheet
+            const substitutionSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(substitutionName)
+            // assert it exists
+            assert(substitutionSheet, 'Source sheet ' + substitutionName + ' does not exist')
+            return substitutionSheet
+        }
+    }
+    // no substitutions specified, return null
+    return null
 }
 
 function _getTableNames(sheets) {
